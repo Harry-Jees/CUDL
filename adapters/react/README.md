@@ -20,14 +20,15 @@ bundling and application startup.
 - Basic layout and text elements.
 - Lazy image elements.
 - Custom component registry.
+- Local component definitions and string-valued property injection.
 - Unknown elements are preserved as marked wrapper elements.
 - Source document and line metadata are retained where available.
 
 ## Not implemented yet
 
-- CUDL expressions, properties and data binding.
+- Expression evaluation, typed properties, defaults and data binding.
 - Button actions and event handlers.
-- Import and module resolution.
+- Cross-module component bundling and import-driven runtime resolution.
 - Themes, responsive layout engine and motion.
 - Automatic conversion from `.cudl` files to IR during a Vite build.
 
