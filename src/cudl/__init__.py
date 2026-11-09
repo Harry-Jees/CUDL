@@ -1,6 +1,7 @@
 """CUDL language core."""
 
 from .diagnostics import Diagnostic, Severity
+from .expressions import Expression, ExpressionError, parse_expression, resolve_path
 from .components import ComponentDefinition, ComponentProperty, ComponentRegistry, build_component_registry
 from .lexer import LexError, Token, TokenKind, tokenize
 from .ir import IRDocument, IRNode, lower
@@ -9,6 +10,10 @@ from .parser import Document, Node, ParseResult, parse
 
 __all__ = [
     "Diagnostic",
+    "Expression",
+    "ExpressionError",
+    "parse_expression",
+    "resolve_path",
     "ComponentDefinition",
     "ComponentProperty",
     "ComponentRegistry",
