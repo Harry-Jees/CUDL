@@ -51,6 +51,12 @@ def _component_name(value: str) -> str | None:
     return name
 
 
+def _walk(nodes):
+    for node in nodes:
+        yield node
+        yield from _walk(node.children)
+
+
 def build_component_registry(graph: ModuleGraph) -> ComponentRegistry:
     """Collect component declarations and validate imports/references.
 
@@ -108,7 +114,7 @@ def build_component_registry(graph: ModuleGraph) -> ComponentRegistry:
                     continue
                 visible[alias] = target_definitions[source_key]
 
-        for node in record.document.nodes:
+        for node in _walk(record.document.nodes):
             if not node.kind.startswith("@"):
                 continue
             reference = node.kind[1:].casefold()
