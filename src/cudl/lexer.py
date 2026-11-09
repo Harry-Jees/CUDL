@@ -66,7 +66,7 @@ _SINGLE = {
     ")": TokenKind.RPAREN,
 }
 _OPERATORS = set("=+-*/%<>!")
-_ESCAPES = {"n": "\\n", "r": "\\r", "t": "\\t", '"': '"', "\\": "\\"}
+_ESCAPES = {"n": "\n", "r": "\r", "t": "\t", '"': '"', "\\": "\\"}
 
 
 def tokenize(source: str) -> list[Token]:
