@@ -64,3 +64,71 @@ def test_invalid_component_declaration_is_reported():
     )
     registry = build_component_registry(graph)
     assert any(item.code == "CUDL3001" for item in registry.diagnostics)
+
+
+def test_required_and_optional_component_properties():
+    graph = resolve_project(
+        {
+            "KIT/profile.cudl": (
+                "component ProfileCard\n"
+                "    property name\n"
+                "    property subtitle optional\n"
+            ),
+            "PAGES/home.cudl": (
+                'import {ProfileCard} from "KIT/profile"\n'
+                "page Home\n"
+                "    @ProfileCard\n"
+                '        name = "Harry"\n'
+            ),
+        },
+        "PAGES/home.cudl",
+    )
+    registry = build_component_registry(graph)
+    definition = registry.definitions["KIT/profile.cudl"]["profilecard"]
+    assert [(p.name, p.required) for p in definition.properties] == [
+        ("name", True), ("subtitle", False)
+    ]
+    assert not registry.has_errors
+
+
+def test_missing_required_component_property_is_reported():
+    graph = resolve_project(
+        {
+            "KIT/profile.cudl": "component ProfileCard\n    property name\n",
+            "PAGES/home.cudl": (
+                'import {ProfileCard} from "KIT/profile"\n'
+                "page Home\n"
+                "    @ProfileCard\n"
+            ),
+        },
+        "PAGES/home.cudl",
+    )
+    registry = build_component_registry(graph)
+    assert any(item.code == "CUDL3010" for item in registry.diagnostics)
+
+
+def test_unknown_component_instance_property_is_reported():
+    graph = resolve_project(
+        {
+            "KIT/profile.cudl": "component ProfileCard\n    property name\n",
+            "PAGES/home.cudl": (
+                'import {ProfileCard} from "KIT/profile"\n'
+                "page Home\n"
+                "    @ProfileCard\n"
+                '        title = "Unexpected"\n'
+                '        name = "Harry"\n'
+            ),
+        },
+        "PAGES/home.cudl",
+    )
+    registry = build_component_registry(graph)
+    assert any(item.code == "CUDL3008" for item in registry.diagnostics)
+
+
+def test_duplicate_component_property_is_reported():
+    graph = resolve_project(
+        {"KIT/profile.cudl": "component ProfileCard\n    property name\n    property name\n"},
+        "KIT/profile.cudl",
+    )
+    registry = build_component_registry(graph)
+    assert any(item.code == "CUDL3006" for item in registry.diagnostics)
