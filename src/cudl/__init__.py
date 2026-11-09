@@ -2,17 +2,21 @@
 
 from .diagnostics import Diagnostic, Severity
 from .lexer import LexError, Token, TokenKind, tokenize
+from .ir import IRDocument, IRNode, lower
 from .parser import Document, Node, ParseResult, parse
 
 __all__ = [
     "Diagnostic",
     "Document",
     "LexError",
+    "IRDocument",
+    "IRNode",
     "Node",
     "ParseResult",
     "Severity",
     "Token",
     "TokenKind",
+    "lower",
     "parse",
     "tokenize",
 ]
