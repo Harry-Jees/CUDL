@@ -132,3 +132,37 @@ def test_duplicate_component_property_is_reported():
     )
     registry = build_component_registry(graph)
     assert any(item.code == "CUDL3006" for item in registry.diagnostics)
+
+def test_component_properties_accept_data_paths_and_literals():
+    graph = resolve_project(
+        {
+            "KIT/profile.cudl": "component ProfileCard\n    property name\n    property active\n",
+            "PAGES/home.cudl": (
+                'import {ProfileCard} from "KIT/profile"\n'
+                "page Home\n"
+                "    @ProfileCard\n"
+                "        name = user.profile.name\n"
+                "        active = true\n"
+            ),
+        },
+        "PAGES/home.cudl",
+    )
+    registry = build_component_registry(graph)
+    assert not registry.has_errors
+
+
+def test_component_properties_reject_calls_and_operators():
+    graph = resolve_project(
+        {
+            "KIT/profile.cudl": "component ProfileCard\n    property name\n",
+            "PAGES/home.cudl": (
+                'import {ProfileCard} from "KIT/profile"\n'
+                "page Home\n"
+                "    @ProfileCard\n"
+                "        name = get_name()\n"
+            ),
+        },
+        "PAGES/home.cudl",
+    )
+    registry = build_component_registry(graph)
+    assert any(item.code == "CUDL3011" for item in registry.diagnostics)
