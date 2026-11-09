@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from .diagnostics import Diagnostic, Severity
 from .modules import ModuleGraph
+from .expressions import ExpressionError, parse_expression
 
 @dataclass(frozen=True, slots=True)
 class ComponentProperty:
@@ -117,6 +118,15 @@ def _validate_instance(node, definition, path, diagnostics):
             ))
             continue
         supplied.add(key)
+        try:
+            parse_expression(child.value.lstrip()[1:])
+        except ExpressionError as exc:
+            diagnostics.append(Diagnostic(
+                code="CUDL3011",
+                message=f"Invalid value for property {child.kind!r}: {exc}",
+                severity=Severity.ERROR, line=child.line, source=path,
+                suggestion="Use a literal or data path, for example: name = user.name",
+            ))
     for key, prop in declared.items():
         if prop.required and key not in supplied:
             diagnostics.append(Diagnostic(
