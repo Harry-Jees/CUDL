@@ -3,6 +3,7 @@
 from .diagnostics import Diagnostic, Severity
 from .lexer import LexError, Token, TokenKind, tokenize
 from .ir import IRDocument, IRNode, lower
+from .modules import ImportBinding, ImportSpec, ModuleGraph, parse_import, resolve_project
 from .parser import Document, Node, ParseResult, parse
 
 __all__ = [
@@ -11,6 +12,9 @@ __all__ = [
     "LexError",
     "IRDocument",
     "IRNode",
+    "ImportBinding",
+    "ImportSpec",
+    "ModuleGraph",
     "Node",
     "ParseResult",
     "Severity",
@@ -18,6 +22,8 @@ __all__ = [
     "TokenKind",
     "lower",
     "parse",
+    "parse_import",
+    "resolve_project",
     "tokenize",
 ]
 
