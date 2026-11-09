@@ -70,9 +70,11 @@ Pass values as direct children of a component instance:
 ```
 
 The semantic pass validates unknown, duplicate, and missing required property
-assignments. Values are currently preserved as source text; expression
-evaluation, type checking, defaults, slots, and adapter-side property injection
-are later milestones.
+assignments. Property values now accept safe literals (strings, numbers, booleans, and
+`null`) or dotted data paths such as `user.profile.name`. The parser produces
+structured expression data; it does not execute source code. Calls, operators,
+indexing, and arbitrary expressions are rejected. Runtime data binding in host
+adapters, type checking, defaults, and slots remain later milestones.
 
 Additional diagnostic codes:
 - `CUDL3005`: invalid property name.
@@ -81,3 +83,26 @@ Additional diagnostic codes:
 - `CUDL3008`: unknown instance property.
 - `CUDL3009`: duplicate instance assignment.
 - `CUDL3010`: missing required property.
+
+
+## Safe value expressions
+
+The first expression grammar is deliberately small and non-executable:
+
+```cudl
+@ProfileCard
+    name = user.profile.display_name
+    photo = "profile.png"
+    active = true
+    subtitle = null
+```
+
+Supported values are quoted strings, finite numbers, booleans, `null`, and
+case-sensitive dotted identifier paths. Paths are resolved only against an
+explicit data mapping through the expression API. CUDL does not use Python
+`eval`, JavaScript `eval`, or invoke functions from property expressions.
+
+Calls, operators, indexing, and computed expressions are rejected for now.
+
+Additional diagnostic code:
+- `CUDL3011`: invalid or unsupported property value expression.
