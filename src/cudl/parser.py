@@ -53,7 +53,6 @@ class ParseResult:
 
 
 _NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*")
-_HASH_NAME = re.compile(r"^#[A-Za-z_][A-Za-z0-9_]*")
 _AT_NAME = re.compile(r"^@([A-Za-z_][A-Za-z0-9_-]*)")
 
 
@@ -87,8 +86,8 @@ def parse(text: str, source: str | None = None) -> ParseResult:
         if not raw.strip() or raw.lstrip().startswith("##"):
             continue
 
-        leading = raw[: len(raw) - len(raw.lstrip(" \\t"))]
-        if "\\t" in leading:
+        leading = raw[: len(raw) - len(raw.lstrip(" \t"))]
+        if "\t" in leading:
             diagnostics.append(Diagnostic(
                 code="CUDL1001",
                 message="Tabs are not allowed for indentation; use four spaces.",
