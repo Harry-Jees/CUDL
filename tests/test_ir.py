@@ -40,7 +40,7 @@ def test_script_functions_are_declarations_not_components():
         "script\n"
         "    @greet #person\n"
         "        print Hello #person\n"
-        "@greet Harry\n"
+        "    @greet Harry\n"
     )
     ir = lower(parsed.document)
     script = ir.nodes[0]
