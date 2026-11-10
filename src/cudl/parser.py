@@ -54,6 +54,7 @@ class ParseResult:
 
 _NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*")
 _AT_NAME = re.compile(r"^@([A-Za-z_][A-Za-z0-9_-]*)")
+_VARIABLE_ASSIGNMENT = re.compile(r"^#[A-Za-z_][A-Za-z0-9_]*\\s*=\\s*\\S.*$")
 
 
 def _strip_comment(text: str) -> str:
@@ -136,6 +137,18 @@ def parse(text: str, source: str | None = None) -> ParseResult:
 
         statement = _strip_comment(raw[indent:])
         if not statement:
+            continue
+
+        if statement.startswith("#") and not _VARIABLE_ASSIGNMENT.fullmatch(statement):
+            diagnostics.append(Diagnostic(
+                code="CUDL1004",
+                message="A variable statement must assign a value to a valid hash-prefixed name.",
+                severity=Severity.ERROR,
+                line=line_number,
+                column=indent + 1,
+                source=source,
+                suggestion="Use: #name = value",
+            ))
             continue
 
         kind, value = _split_statement(statement)
