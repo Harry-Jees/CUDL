@@ -54,3 +54,11 @@ def test_ignores_double_hash_comments_but_keeps_hash_variables():
     assert not result.has_errors
     assert len(result.document.nodes) == 2
     assert result.document.nodes[0].kind == "variable"
+
+
+def test_inline_comments_are_removed_without_changing_quoted_hashes():
+    result = parse('page Home ## comment\n    title "Keep ## inside text"\n')
+    assert not result.has_errors
+    page = result.document.nodes[0]
+    assert page.value == "Home"
+    assert page.children[0].value == '"Keep ## inside text"'
