@@ -53,7 +53,18 @@ print #name
 
 Indexing uses square brackets. Numeric indexes address sequences; bare names
 inside brackets are mapping keys. Quoted keys are available for keys containing
-spaces or punctuation.
+spaces or punctuation. Simple lists and mappings can also be written without
+quoting ordinary words:
+
+```cudl
+#people = [Harry, Ada, Lin]
+#profile = {name: Harry, age: 21}
+#first = #people[0]
+#person = #profile[name]
+```
+
+The first runtime supports bounded list and mapping literals, safe indexing,
+and primitive values. It does not yet provide arbitrary object construction.
 
 ## 3. Comments
 
