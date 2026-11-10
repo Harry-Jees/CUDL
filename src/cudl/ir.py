@@ -61,9 +61,9 @@ class IRDocument:
         }
 
 
-def _category(kind: str, in_script: bool = False) -> str:
+def _category(kind: str, in_script: bool = False, has_children: bool = False) -> str:
     if in_script and kind.startswith("@"):
-        return "declaration"
+        return "declaration" if has_children else "generic"
     if kind in _LAYOUT_KINDS:
         return "layout"
     if kind in _ELEMENT_KINDS:
@@ -83,7 +83,7 @@ def _lower_node(node: Node, in_script: bool = False) -> IRNode:
         name=kind,
         value=node.value,
         line=node.line,
-        category=_category(kind, in_script),
+        category=_category(kind, in_script, bool(node.children)),
         children=[_lower_node(child, script_context) for child in node.children],
     )
 
