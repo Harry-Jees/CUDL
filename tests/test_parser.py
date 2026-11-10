@@ -23,7 +23,7 @@ def test_preserves_hash_variables_and_at_functions():
         "    #name = Harry\n"
         "    @greet #person\n"
         "        print Hello #person\n"
-        "    greet #name\n"
+        "    @greet #name\n"
     )
 
     assert not result.has_errors
