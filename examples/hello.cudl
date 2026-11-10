@@ -1,7 +1,7 @@
 page Home
     header
-        title "Hello, CUDL"
+        title Hello, CUDL
 
     content
-        text "My first CUDL application"
-        button "Get Started"
+        text My first CUDL application
+        button Get Started
