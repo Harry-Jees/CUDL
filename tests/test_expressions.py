@@ -9,6 +9,9 @@ from cudl.expressions import ExpressionError, parse_expression, resolve_path
         ('"Hello"', "string", "Hello"),
         ("'Hello\\nworld'", "string", "Hello\nworld"),
         ("Hello from CUDL", "string", "Hello from CUDL"),
+        ("profile.png", "string", "profile.png"),
+        ("get_name()", "string", "get_name()"),
+        ("a + b", "string", "a + b"),
         ("42", "number", 42),
         ("-2.5", "number", -2.5),
         ("true", "boolean", True),
@@ -16,7 +19,7 @@ from cudl.expressions import ExpressionError, parse_expression, resolve_path
         ("null", "null", None),
     ],
 )
-def test_parses_dynamic_values(source, kind, value):
+def test_parses_dynamic_values_without_executing_text(source, kind, value):
     expression = parse_expression(source)
     assert expression.kind == kind
     assert expression.value == value
@@ -41,9 +44,9 @@ def test_parses_list_and_mapping_indexes():
 
 @pytest.mark.parametrize(
     "source",
-    ["", "user()", "user.name + 'x'", "a + b", "1/0", "#items[-1]", "#items[]", "#user."],
+    ["", "#", "#items[-1]", "#items[]", "#user.", "#user[name", "#user[1.5]"],
 )
-def test_rejects_executable_or_malformed_expressions(source):
+def test_rejects_malformed_hash_paths(source):
     with pytest.raises(ExpressionError):
         parse_expression(source)
 
