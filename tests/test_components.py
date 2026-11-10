@@ -78,7 +78,7 @@ def test_required_and_optional_component_properties():
                 'import {ProfileCard} from "KIT/profile"\n'
                 "page Home\n"
                 "    @ProfileCard\n"
-                '        name = "Harry"\n'
+                "        name = Harry\n"
             ),
         },
         "PAGES/home.cudl",
@@ -115,8 +115,8 @@ def test_unknown_component_instance_property_is_reported():
                 'import {ProfileCard} from "KIT/profile"\n'
                 "page Home\n"
                 "    @ProfileCard\n"
-                '        title = "Unexpected"\n'
-                '        name = "Harry"\n'
+                "        title = Unexpected\n"
+                "        name = Harry\n"
             ),
         },
         "PAGES/home.cudl",
@@ -127,21 +127,32 @@ def test_unknown_component_instance_property_is_reported():
 
 def test_duplicate_component_property_is_reported():
     graph = resolve_project(
-        {"KIT/profile.cudl": "component ProfileCard\n    property name\n    property name\n"},
+        {
+            "KIT/profile.cudl": (
+                "component ProfileCard\n"
+                "    property name\n"
+                "    property name\n"
+            )
+        },
         "KIT/profile.cudl",
     )
     registry = build_component_registry(graph)
     assert any(item.code == "CUDL3006" for item in registry.diagnostics)
 
-def test_component_properties_accept_data_paths_and_literals():
+
+def test_component_properties_accept_hash_data_paths_and_literals():
     graph = resolve_project(
         {
-            "KIT/profile.cudl": "component ProfileCard\n    property name\n    property active\n",
+            "KIT/profile.cudl": (
+                "component ProfileCard\n"
+                "    property name\n"
+                "    property active\n"
+            ),
             "PAGES/home.cudl": (
                 'import {ProfileCard} from "KIT/profile"\n'
                 "page Home\n"
                 "    @ProfileCard\n"
-                "        name = user.profile.name\n"
+                "        name = #user.profile.name\n"
                 "        active = true\n"
             ),
         },
@@ -166,3 +177,20 @@ def test_component_properties_reject_calls_and_operators():
     )
     registry = build_component_registry(graph)
     assert any(item.code == "CUDL3011" for item in registry.diagnostics)
+
+
+def test_at_functions_inside_script_are_not_component_references():
+    graph = resolve_project(
+        {
+            "PAGES/home.cudl": (
+                "page Home\n"
+                "    script\n"
+                "        @greet #person\n"
+                "            print Hello #person\n"
+                "        greet Harry\n"
+            )
+        },
+        "PAGES/home.cudl",
+    )
+    registry = build_component_registry(graph)
+    assert not registry.has_errors
