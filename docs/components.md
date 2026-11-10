@@ -35,7 +35,7 @@ against component declarations in their target modules, and checks component
 references against local declarations and imported names.
 
 CUDL identifiers are matched case-insensitively. Import aliases are the names
-visible to the importing module. At-prefixed declarations inside native
+visible to the importing module. At-prefixed declarations and calls inside native
 `script` blocks are functions, not design component references.
 
 The registry validates required and optional component properties, unknown
