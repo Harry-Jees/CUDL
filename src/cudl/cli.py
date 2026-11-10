@@ -10,6 +10,7 @@ import sys
 from .parser import parse
 from .modules import resolve_project
 from .lexer import LexError, tokenize
+from .runtime import CUDLRuntimeError, run_script
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -23,6 +24,8 @@ def _parser() -> argparse.ArgumentParser:
     ):
         command = commands.add_parser(name, help=help_text)
         command.add_argument("file", type=Path)
+    run = commands.add_parser("run", help="Run supported native CUDL script blocks.")
+    run.add_argument("file", type=Path)
     graph = commands.add_parser("graph", help="Resolve project imports and print the module graph.")
     graph.add_argument("project", type=Path)
     graph.add_argument("entry", help="Entry module path relative to the project root.")
@@ -57,6 +60,17 @@ def main() -> int:
         except LexError as exc:
             print(f"{args.file}:{exc.line}:{exc.column}: error CUDL0001: {exc.message}", file=sys.stderr)
             return 1
+
+    if args.command == "run":
+        try:
+            result = run_script(source)
+        except CUDLRuntimeError as exc:
+            location = f":{exc.line}" if exc.line is not None else ""
+            print(f"{args.file}{location}: error: {exc}", file=sys.stderr)
+            return 1
+        for line in result.output:
+            print(line)
+        return 0
 
     result = parse(source, source=str(args.file))
 
