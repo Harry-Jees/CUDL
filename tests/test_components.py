@@ -162,7 +162,7 @@ def test_component_properties_accept_hash_data_paths_and_literals():
     assert not registry.has_errors
 
 
-def test_component_properties_reject_calls_and_operators():
+def test_component_properties_reject_malformed_hash_paths():
     graph = resolve_project(
         {
             "KIT/profile.cudl": "component ProfileCard\n    property name\n",
@@ -170,7 +170,7 @@ def test_component_properties_reject_calls_and_operators():
                 'import {ProfileCard} from "KIT/profile"\n'
                 "page Home\n"
                 "    @ProfileCard\n"
-                "        name = get_name()\n"
+                "        name = #user.name + 'x'\n"
             ),
         },
         "PAGES/home.cudl",
