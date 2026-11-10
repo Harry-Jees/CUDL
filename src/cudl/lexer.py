@@ -23,6 +23,7 @@ class TokenKind(str, Enum):
     COMMA = "COMMA"
     DOT = "DOT"
     AT = "AT"
+    HASH = "HASH"
     OPERATOR = "OPERATOR"
     LBRACKET = "LBRACKET"
     RBRACKET = "RBRACKET"
@@ -60,6 +61,7 @@ _SINGLE = {
     ",": TokenKind.COMMA,
     ".": TokenKind.DOT,
     "@": TokenKind.AT,
+    "#": TokenKind.HASH,
     "[": TokenKind.LBRACKET,
     "]": TokenKind.RBRACKET,
     "(": TokenKind.LPAREN,
@@ -70,13 +72,17 @@ _ESCAPES = {"n": "\n", "r": "\r", "t": "\t", '"': '"', "\\": "\\"}
 
 
 def tokenize(source: str) -> list[Token]:
-    """Convert CUDL source into tokens, including indentation structure."""
+    """Convert CUDL source into tokens, including indentation structure.
+
+    Double hash starts a comment. A single hash is a variable marker and is
+    emitted as a HASH token.
+    """
     tokens: list[Token] = []
     indents = [0]
     lines = source.splitlines()
 
     for line_no, raw in enumerate(lines, start=1):
-        if not raw.strip() or raw.lstrip().startswith("#"):
+        if not raw.strip() or raw.lstrip().startswith("##"):
             continue
 
         prefix = raw[: len(raw) - len(raw.lstrip(" "))]
@@ -105,6 +111,8 @@ def tokenize(source: str) -> list[Token]:
             if char.isspace():
                 i += 1
                 continue
+            if raw.startswith("##", i):
+                break
             column = i + 1
 
             if char in ('"', "'"):
@@ -163,7 +171,7 @@ def tokenize(source: str) -> list[Token]:
 
             raise LexError(f"Unexpected character {char!r}.", line_no, column)
 
-        tokens.append(Token(TokenKind.NEWLINE, "\\n", line_no, len(raw) + 1))
+        tokens.append(Token(TokenKind.NEWLINE, "\n", line_no, len(raw) + 1))
 
     final_line = max(1, len(lines))
     while len(indents) > 1:

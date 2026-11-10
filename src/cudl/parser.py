@@ -53,31 +53,60 @@ class ParseResult:
 
 
 _NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*")
+_AT_NAME = re.compile(r"^@([A-Za-z_][A-Za-z0-9_-]*)")
+_VARIABLE_ASSIGNMENT = re.compile(r"^#[A-Za-z_][A-Za-z0-9_]*\s*=\s*\S.*$")
+
+
+def _strip_comment(text: str) -> str:
+    """Remove an inline double-hash comment without touching quoted text."""
+    quote: str | None = None
+    escaped = False
+    index = 0
+    while index < len(text):
+        char = text[index]
+        if quote is not None:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == quote:
+                quote = None
+        elif char in ("'", '"'):
+            quote = char
+        elif text.startswith("##", index):
+            return text[:index].rstrip()
+        index += 1
+    return text.strip()
 
 
 def _split_statement(text: str) -> tuple[str, str]:
-    """Split a statement into its leading identifier and remaining payload."""
+    """Split a statement while preserving CUDL's special prefixes."""
+    if text.startswith("#"):
+        return "variable", text
+    if text.startswith("@"):
+        match = _AT_NAME.match(text)
+        if match:
+            return "@" + match.group(1).casefold(), text[match.end():].strip()
+        return text, ""
     match = _NAME.match(text)
     if not match:
         return text, ""
-    return match.group(0).lower(), text[match.end():].strip()
+    return match.group(0).casefold(), text[match.end():].strip()
 
 
 def parse(text: str, source: str | None = None) -> ParseResult:
     """Parse the supported indentation-based CUDL subset.
 
     Four spaces form one indentation level. Blank lines and full-line comments
-    are ignored. The parser preserves unknown statement names as generic nodes
-    so future language features can be added without coupling parsing to UI
-    semantics.
+    beginning with double hash are ignored. A single hash starts a variable
+    declaration/reference and is never treated as a comment.
     """
     roots: list[Node] = []
     diagnostics: list[Diagnostic] = []
-    # Each stack entry is (indent width, node whose children follow).
     stack: list[tuple[int, Node]] = []
 
     for line_number, raw in enumerate(text.splitlines(), start=1):
-        if not raw.strip() or raw.lstrip().startswith("#"):
+        if not raw.strip() or raw.lstrip().startswith("##"):
             continue
 
         leading = raw[: len(raw) - len(raw.lstrip(" \t"))]
@@ -106,8 +135,20 @@ def parse(text: str, source: str | None = None) -> ParseResult:
             ))
             continue
 
-        statement = raw[indent:].strip()
+        statement = _strip_comment(raw[indent:])
         if not statement:
+            continue
+
+        if statement.startswith("#") and not _VARIABLE_ASSIGNMENT.fullmatch(statement):
+            diagnostics.append(Diagnostic(
+                code="CUDL1004",
+                message="A variable statement must assign a value to a valid hash-prefixed name.",
+                severity=Severity.ERROR,
+                line=line_number,
+                column=indent + 1,
+                source=source,
+                suggestion="Use: #name = value",
+            ))
             continue
 
         kind, value = _split_statement(statement)
@@ -127,7 +168,6 @@ def parse(text: str, source: str | None = None) -> ParseResult:
                 source=source,
                 suggestion="Indent nested statements by exactly four spaces.",
             ))
-            # Recover at the nearest valid parent level.
             indent = expected_indent
 
         if stack and indent == stack[-1][0] + 4:

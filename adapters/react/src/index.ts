@@ -38,8 +38,12 @@ const TAGS: Record<string, string> = {
   divider: "hr", spacer: "div",
 };
 
+const NON_RENDERING_BLOCKS = new Set(["script", "js", "javascript", "python", "java", "c", "cpp", "rust", "go", "swift", "kotlin"]);
+
 type CUDLValue = string | number | boolean | null | undefined;
 type CUDLData = Record<string, unknown>;
+type CUDLPathPart = string | number;
+
 export interface CUDLRuntimeDiagnostic {
   code: "CUDL4001" | "CUDL4002";
   message: string;
@@ -51,7 +55,6 @@ export interface CUDLRenderOptions {
 }
 
 function decodeString(raw: string): string {
-  const quote = raw[0];
   return raw.slice(1, -1).replace(/\\(n|r|t|\\|"|')/g, (_, escaped: string) => {
     const escapes: Record<string, string> = {
       n: "\n", r: "\r", t: "\t", "\\": "\\", '"': '"', "'": "'",
@@ -60,9 +63,58 @@ function decodeString(raw: string): string {
   });
 }
 
+function parseDataPath(source: string): CUDLPathPart[] | null {
+  if (!source.startsWith("#")) return null;
+  const path = source.slice(1);
+  const root = /^[A-Za-z_][A-Za-z0-9_]*/.exec(path);
+  if (!root) return null;
+
+  const parts: CUDLPathPart[] = [root[0]];
+  let index = root[0].length;
+  while (index < path.length) {
+    if (path[index] === ".") {
+      const property = /^[A-Za-z_][A-Za-z0-9_]*/.exec(path.slice(index + 1));
+      if (!property) return null;
+      parts.push(property[0]);
+      index += property[0].length + 1;
+      continue;
+    }
+    if (path[index] === "[") {
+      const end = path.indexOf("]", index + 1);
+      if (end < 0) return null;
+      const key = path.slice(index + 1, end).trim();
+      if (/^(0|[1-9]\d*)$/.test(key)) {
+        parts.push(Number(key));
+      } else if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) {
+        parts.push(key);
+      } else if ((key.startsWith('"') && key.endsWith('"')) ||
+                 (key.startsWith("'") && key.endsWith("'"))) {
+        parts.push(decodeString(key));
+      } else {
+        return null;
+      }
+      index = end + 1;
+      continue;
+    }
+    return null;
+  }
+  return parts;
+}
+
 function resolveDataPath(path: string, data: CUDLData): CUDLValue {
+  const parts = parseDataPath(path);
+  if (!parts) throw new Error("Invalid CUDL variable path.");
+
   let current: unknown = data;
-  for (const part of path.split(".")) {
+  for (const part of parts) {
+    if (typeof part === "number") {
+      if (!Array.isArray(current) || !Number.isSafeInteger(part) ||
+          part < 0 || part >= current.length) {
+        throw new Error('Data index in "' + path + '" was not found.');
+      }
+      current = current[part];
+      continue;
+    }
     if (current === null || typeof current !== "object" ||
         !Object.prototype.hasOwnProperty.call(current, part)) {
       throw new Error('Data path "' + path + '" was not found.');
@@ -76,7 +128,7 @@ function resolveDataPath(path: string, data: CUDLData): CUDLValue {
   throw new Error('Data path "' + path + '" must resolve to a primitive value.');
 }
 
-/** Resolve the safe CUDL literal/path grammar against an explicit data object. */
+/** Resolve dynamic CUDL values; only #name requests host-data lookup. */
 export function resolveCUDLValue(
   source: string,
   data: CUDLData = {},
@@ -94,10 +146,8 @@ export function resolveCUDLValue(
     if (!Number.isFinite(value)) throw new Error("Numeric values must be finite.");
     return value;
   }
-  if (/^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/.test(raw)) {
-    return resolveDataPath(raw, data);
-  }
-  throw new Error("Unsupported CUDL value expression.");
+  if (raw.startsWith("#")) return resolveDataPath(raw, data);
+  return raw;
 }
 
 function stringifyValue(value: unknown): string {
@@ -136,7 +186,7 @@ function renderNode(
   onDiagnostic?: CUDLRenderOptions["onDiagnostic"],
 ): ReactNode {
   const name = node.name.toLowerCase();
-  if (name === "property" || name === "component") return null;
+  if (name === "property" || name === "component" || NON_RENDERING_BLOCKS.has(name)) return null;
 
   const rawValue = (node.value ?? "").trim();
   let resolved: CUDLValue;
@@ -147,7 +197,7 @@ function renderNode(
       resolved = resolveCUDLValue(rawValue, data);
     } catch (error) {
       resolved = rawValue;
-      if (/^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/.test(rawValue)) {
+      if (rawValue.startsWith("#")) {
         onDiagnostic?.({
           code: "CUDL4002",
           message: error instanceof Error ? error.message : "Unable to resolve CUDL value.",
@@ -220,7 +270,7 @@ function renderNode(
 
 /** Render CUDL IR inside an existing React application.
  * Component declarations in the supplied document are indexed automatically.
- * Component properties accept safe literals and dotted paths into options.data.
+ * Component properties accept dynamic values and explicit #data paths.
  * No source code or function calls are evaluated.
  */
 export function renderCUDL(

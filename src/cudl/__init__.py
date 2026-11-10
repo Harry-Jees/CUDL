@@ -7,9 +7,13 @@ from .lexer import LexError, Token, TokenKind, tokenize
 from .ir import IRDocument, IRNode, lower
 from .modules import ImportBinding, ImportSpec, ModuleGraph, parse_import, resolve_project
 from .parser import Document, Node, ParseResult, parse
+from .runtime import CUDLRuntimeError, RuntimeResult, run_script
 
 __all__ = [
     "Diagnostic",
+    "CUDLRuntimeError",
+    "RuntimeResult",
+    "run_script",
     "Expression",
     "ExpressionError",
     "parse_expression",

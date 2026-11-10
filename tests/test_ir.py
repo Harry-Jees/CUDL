@@ -33,3 +33,19 @@ def test_unknown_custom_component_is_preserved():
 def test_ir_serialization_is_deterministic():
     document = parse("page Home\n    text \"Hi\"\n").document
     assert lower(document).to_dict() == lower(document).to_dict()
+
+
+def test_script_functions_are_declarations_not_components():
+    parsed = parse(
+        "script\n"
+        "    @greet #person\n"
+        "        print Hello #person\n"
+        "    @greet Harry\n"
+    )
+    ir = lower(parsed.document)
+    script = ir.nodes[0]
+    assert script.category == "declaration"
+    assert script.children[0].kind == "@greet"
+    assert script.children[0].category == "declaration"
+    assert script.children[1].kind == "@greet"
+    assert script.children[1].category == "generic"
