@@ -78,7 +78,7 @@ Safe indexed paths are supported:
     photo = #assets[profile]
 ```
 
-The expression parser does not execute calls or arbitrary source. A malformed
+The expression parser does not execute calls or arbitrary source. The Python reference runtime separately supports a bounded set of arithmetic, comparison, and boolean expressions plus native @-functions. A malformed
 hash path produces a diagnostic. The React adapter resolves hash paths only
 against the explicit data object passed by the host; paths are read through
 own properties and must resolve to a primitive value.
