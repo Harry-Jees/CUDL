@@ -13,7 +13,7 @@ import re
 
 
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
-_PATH_ROOT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*")
+_PATH_ROOT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 _NUMBER = re.compile(r"^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$")
 
 
