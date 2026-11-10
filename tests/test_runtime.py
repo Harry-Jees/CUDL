@@ -46,6 +46,22 @@ def test_hash_paths_support_mapping_and_sequence_indexing():
     assert result.output == ["Ada"]
 
 
+def test_list_and_mapping_literals_support_simple_indexing():
+    result = run_script(
+        "script\n"
+        "    #items = [Harry, Ada, Lin]\n"
+        "    #user = {name: Harry, age: 21}\n"
+        "    #first = #items[0]\n"
+        "    #person = #user[name]\n"
+        "    print #first\n"
+        "    print #person\n"
+    )
+
+    assert result.variables["items"] == ["Harry", "Ada", "Lin"]
+    assert result.variables["user"] == {"name": "Harry", "age": 21}
+    assert result.output == ["Harry", "Harry"]
+
+
 def test_safe_arithmetic_and_comparisons_are_evaluated():
     result = run_script(
         "script\n"
