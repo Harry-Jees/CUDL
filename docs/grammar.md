@@ -141,7 +141,7 @@ dependencies are actually available.
 
 - `#` — variable declaration and reference.
 - `##` — comment.
-- `@` — native function declaration in scripts; component reference in design.
+- `@` — native function declaration/call in scripts; component reference in design.
 - `[]` — indexing only in native CUDL syntax.
 - `.` — property access in a hash-prefixed path.
 - `=` — assignment.
