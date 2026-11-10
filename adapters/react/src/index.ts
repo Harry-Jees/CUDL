@@ -53,7 +53,6 @@ export interface CUDLRenderOptions {
 }
 
 function decodeString(raw: string): string {
-  const quote = raw[0];
   return raw.slice(1, -1).replace(/\\(n|r|t|\\|"|')/g, (_, escaped: string) => {
     const escapes: Record<string, string> = {
       n: "\n", r: "\r", t: "\t", "\\": "\\", '"': '"', "'": "'",
@@ -219,7 +218,7 @@ function renderNode(
         { key, name: componentName, value, sourceLine: node.source?.line, properties: assigned },
         ...(node.children ?? [])
           .filter((child) => !(child.value ?? "").trimStart().startsWith("="))
-          .map((child, index) => renderNode(child, registry, definitions, \`\${key}.\${index}\`, assigned, data, onDiagnostic)),
+          .map((child, index) => renderNode(child, registry, definitions, \`${key}.${index}\`, assigned, data, onDiagnostic)),
       );
     }
 
@@ -228,14 +227,14 @@ function renderNode(
       return createElement(
         "div",
         { key, "data-cudl-component": componentName, "data-cudl-source-line": node.source?.line },
-        ...body.map((child, index) => renderNode(child, registry, definitions, \`\${key}.component.\${index}\`, assigned, data, onDiagnostic)),
+        ...body.map((child, index) => renderNode(child, registry, definitions, \`${key}.component.${index}\`, assigned, data, onDiagnostic)),
       );
     }
   }
 
   const children = (node.children ?? [])
     .filter((child) => !(child.value ?? "").trimStart().startsWith("="))
-    .map((child, index) => renderNode(child, registry, definitions, \`\${key}.\${index}\`, properties, data, onDiagnostic));
+    .map((child, index) => renderNode(child, registry, definitions, \`${key}.${index}\`, properties, data, onDiagnostic));
 
   const CustomComponent = registry[name];
   if (CustomComponent) {
@@ -257,7 +256,7 @@ function renderNode(
   }
 
   const className = ["row", "column", "grid", "stack", "split", "cards", "overlay", "scroll"].includes(name)
-    ? \`cudl-\${name}\`
+    ? \`cudl-${name}\`
     : undefined;
   return createElement(
     tag,
