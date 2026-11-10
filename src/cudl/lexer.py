@@ -23,6 +23,7 @@ class TokenKind(str, Enum):
     COMMA = "COMMA"
     DOT = "DOT"
     AT = "AT"
+    HASH = "HASH"
     OPERATOR = "OPERATOR"
     LBRACKET = "LBRACKET"
     RBRACKET = "RBRACKET"
@@ -60,27 +61,32 @@ _SINGLE = {
     ",": TokenKind.COMMA,
     ".": TokenKind.DOT,
     "@": TokenKind.AT,
+    "#": TokenKind.HASH,
     "[": TokenKind.LBRACKET,
     "]": TokenKind.RBRACKET,
     "(": TokenKind.LPAREN,
     ")": TokenKind.RPAREN,
 }
 _OPERATORS = set("=+-*/%<>!")
-_ESCAPES = {"n": "\n", "r": "\r", "t": "\t", '"': '"', "\\": "\\"}
+_ESCAPES = {"n": "\\n", "r": "\\r", "t": "\\t", '"': '"', "\\\\": "\\\\"}
 
 
 def tokenize(source: str) -> list[Token]:
-    """Convert CUDL source into tokens, including indentation structure."""
+    """Convert CUDL source into tokens, including indentation structure.
+
+    Double hash starts a comment. A single hash is a variable marker and is
+    emitted as a HASH token.
+    """
     tokens: list[Token] = []
     indents = [0]
     lines = source.splitlines()
 
     for line_no, raw in enumerate(lines, start=1):
-        if not raw.strip() or raw.lstrip().startswith("#"):
+        if not raw.strip() or raw.lstrip().startswith("##"):
             continue
 
         prefix = raw[: len(raw) - len(raw.lstrip(" "))]
-        if "\t" in raw[: len(raw) - len(raw.lstrip(" \t"))]:
+        if "\\t" in raw[: len(raw) - len(raw.lstrip(" \\t"))]:
             raise LexError("Tabs are not allowed for indentation; use spaces.", line_no, 1)
 
         width = len(prefix)
@@ -105,6 +111,8 @@ def tokenize(source: str) -> list[Token]:
             if char.isspace():
                 i += 1
                 continue
+            if raw.startswith("##", i):
+                break
             column = i + 1
 
             if char in ('"', "'"):
@@ -113,7 +121,7 @@ def tokenize(source: str) -> list[Token]:
                 i += 1
                 value: list[str] = []
                 while i < len(raw) and raw[i] != quote:
-                    if raw[i] == "\\":
+                    if raw[i] == "\\\\":
                         i += 1
                         if i >= len(raw):
                             raise LexError("Unterminated escape sequence.", line_no, i + 1)
