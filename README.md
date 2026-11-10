@@ -41,7 +41,7 @@ script
     @greet #person
         print Hello #person
 
-    greet #name
+    @greet #name
 ```
 
 This is the intended syntax direction. The current parser recognizes these
