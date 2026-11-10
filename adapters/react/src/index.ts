@@ -38,6 +38,8 @@ const TAGS: Record<string, string> = {
   divider: "hr", spacer: "div",
 };
 
+const NON_RENDERING_BLOCKS = new Set(["script", "js", "javascript", "python", "java", "c", "cpp", "rust", "go", "swift", "kotlin"]);
+
 type CUDLValue = string | number | boolean | null | undefined;
 type CUDLData = Record<string, unknown>;
 type CUDLPathPart = string | number;
@@ -184,7 +186,7 @@ function renderNode(
   onDiagnostic?: CUDLRenderOptions["onDiagnostic"],
 ): ReactNode {
   const name = node.name.toLowerCase();
-  if (name === "property" || name === "component") return null;
+  if (name === "property" || name === "component" || NON_RENDERING_BLOCKS.has(name)) return null;
 
   const rawValue = (node.value ?? "").trim();
   let resolved: CUDLValue;
