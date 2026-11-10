@@ -187,7 +187,7 @@ def test_at_functions_inside_script_are_not_component_references():
                 "    script\n"
                 "        @greet #person\n"
                 "            print Hello #person\n"
-                "        greet Harry\n"
+                "        @greet Harry\n"
             )
         },
         "PAGES/home.cudl",
