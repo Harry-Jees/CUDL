@@ -235,7 +235,7 @@ export function renderCUDL(
   const definitions = new Map<string, CUDLIRNode>();
   for (const node of document.nodes) {
     if (node.name.toLowerCase() === "component") {
-      const componentName = (node.value ?? "").trim().split(/\\s+/, 1)[0]?.toLowerCase();
+      const componentName = (node.value ?? "").trim().split(/\s+/, 1)[0]?.toLowerCase();
       if (componentName) definitions.set(componentName, node);
     }
   }
