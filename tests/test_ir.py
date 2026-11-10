@@ -40,9 +40,12 @@ def test_script_functions_are_declarations_not_components():
         "script\n"
         "    @greet #person\n"
         "        print Hello #person\n"
+        "@greet Harry\n"
     )
     ir = lower(parsed.document)
     script = ir.nodes[0]
     assert script.category == "declaration"
     assert script.children[0].kind == "@greet"
     assert script.children[0].category == "declaration"
+    assert script.children[1].kind == "@greet"
+    assert script.children[1].category == "generic"
