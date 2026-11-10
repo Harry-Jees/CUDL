@@ -183,7 +183,7 @@ def _normalize_literals(source: str) -> str:
             output.append(char)
             if escaped:
                 escaped = False
-            elif char == "\\\\":
+            elif char == "\\":
                 escaped = True
             elif char == quote:
                 quote = None
