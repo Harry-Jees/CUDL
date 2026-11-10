@@ -68,7 +68,7 @@ _SINGLE = {
     ")": TokenKind.RPAREN,
 }
 _OPERATORS = set("=+-*/%<>!")
-_ESCAPES = {"n": "\\n", "r": "\\r", "t": "\\t", '"': '"', "\\\\": "\\\\"}
+_ESCAPES = {"n": "\n", "r": "\r", "t": "\t", '"': '"', "\\": "\\"}
 
 
 def tokenize(source: str) -> list[Token]:
@@ -86,7 +86,7 @@ def tokenize(source: str) -> list[Token]:
             continue
 
         prefix = raw[: len(raw) - len(raw.lstrip(" "))]
-        if "\\t" in raw[: len(raw) - len(raw.lstrip(" \\t"))]:
+        if "\t" in raw[: len(raw) - len(raw.lstrip(" \t"))]:
             raise LexError("Tabs are not allowed for indentation; use spaces.", line_no, 1)
 
         width = len(prefix)
@@ -121,7 +121,7 @@ def tokenize(source: str) -> list[Token]:
                 i += 1
                 value: list[str] = []
                 while i < len(raw) and raw[i] != quote:
-                    if raw[i] == "\\\\":
+                    if raw[i] == "\\":
                         i += 1
                         if i >= len(raw):
                             raise LexError("Unterminated escape sequence.", line_no, i + 1)
@@ -171,7 +171,7 @@ def tokenize(source: str) -> list[Token]:
 
             raise LexError(f"Unexpected character {char!r}.", line_no, column)
 
-        tokens.append(Token(TokenKind.NEWLINE, "\\n", line_no, len(raw) + 1))
+        tokens.append(Token(TokenKind.NEWLINE, "\n", line_no, len(raw) + 1))
 
     final_line = max(1, len(lines))
     while len(indents) > 1:
