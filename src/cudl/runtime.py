@@ -225,18 +225,42 @@ def _safe_expression(source: str, scope: _Scope) -> object:
     except SyntaxError as exc:
         raise CUDLRuntimeError("Invalid CUDL expression.") from exc
 
-    def visit(node: ast.AST) -> object:
+    def visit(node: ast.AST, *, allow_bare_word: bool = False) -> object:
         if isinstance(node, ast.Expression):
             return visit(node.body)
+        if isinstance(node, ast.List):
+            if len(node.elts) > 1000:
+                raise CUDLRuntimeError("A list literal cannot contain more than 1000 items.")
+            return [visit(item, allow_bare_word=True) for item in node.elts]
+        if isinstance(node, ast.Tuple):
+            if len(node.elts) > 1000:
+                raise CUDLRuntimeError("A tuple literal cannot contain more than 1000 items.")
+            return tuple(visit(item, allow_bare_word=True) for item in node.elts)
+        if isinstance(node, ast.Dict):
+            if len(node.keys) > 100:
+                raise CUDLRuntimeError("A mapping literal cannot contain more than 100 entries.")
+            result: dict[object, object] = {}
+            for key_node, value_node in zip(node.keys, node.values):
+                if key_node is None:
+                    raise CUDLRuntimeError("Mapping unpacking is not supported.")
+                key = visit(key_node, allow_bare_word=True)
+                if not isinstance(key, (str, int, float, bool)):
+                    raise CUDLRuntimeError("Mapping keys must be simple values.")
+                if key in result:
+                    raise CUDLRuntimeError("Mapping keys must be unique.")
+                result[key] = visit(value_node, allow_bare_word=True)
+            return result
         if isinstance(node, ast.Constant):
             value = node.value
             if value is None or isinstance(value, (str, bool, int, float)):
                 return _finite(value)
             raise CUDLRuntimeError("Only simple values are allowed in expressions.")
         if isinstance(node, ast.Name):
-            if node.id not in paths:
-                raise CUDLRuntimeError("Only #variable references are allowed in expressions.")
-            return paths[node.id]
+            if node.id in paths:
+                return paths[node.id]
+            if allow_bare_word:
+                return node.id
+            raise CUDLRuntimeError("Only #variable references are allowed in expressions.")
         if isinstance(node, ast.UnaryOp):
             value = visit(node.operand)
             if isinstance(node.op, ast.Not):
@@ -403,6 +427,13 @@ class _Interpreter:
                 return parse_expression(raw).value
             except ExpressionError as exc:
                 raise CUDLRuntimeError(str(exc), line) from exc
+        if raw.startswith("[") or raw.startswith("{"):
+            try:
+                return _safe_expression(raw, scope)
+            except CUDLRuntimeError as exc:
+                if exc.line is None:
+                    exc.line = line
+                raise
 
         has_hash = "#" in raw
         has_operator = bool(re.search(r"(?:==|!=|<=|>=|[+*/%<>])|(?<!^)-(?!>)|\b(?:and|or|not)\b", raw))
