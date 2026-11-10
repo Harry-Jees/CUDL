@@ -170,6 +170,43 @@ def _replace_paths(source: str, scope: _Scope) -> tuple[str, dict[str, object]]:
     return "".join(output), values
 
 
+def _normalize_literals(source: str) -> str:
+    """Translate CUDL's lowercase typed literals without changing quoted text."""
+    output: list[str] = []
+    quote: str | None = None
+    escaped = False
+    index = 0
+    literals = {"true": "True", "false": "False", "null": "None"}
+    while index < len(source):
+        char = source[index]
+        if quote is not None:
+            output.append(char)
+            if escaped:
+                escaped = False
+            elif char == "\\\\":
+                escaped = True
+            elif char == quote:
+                quote = None
+            index += 1
+            continue
+        if char in ("'", '"'):
+            quote = char
+            output.append(char)
+            index += 1
+            continue
+        if char.isalpha() or char == "_":
+            end = index + 1
+            while end < len(source) and (source[end].isalnum() or source[end] == "_"):
+                end += 1
+            word = source[index:end]
+            output.append(literals.get(word.casefold(), word))
+            index = end
+            continue
+        output.append(char)
+        index += 1
+    return "".join(output)
+
+
 def _is_number(value: object) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
@@ -182,6 +219,7 @@ def _finite(value: object) -> object:
 
 def _safe_expression(source: str, scope: _Scope) -> object:
     replaced, paths = _replace_paths(source, scope)
+    replaced = _normalize_literals(replaced)
     try:
         tree = ast.parse(replaced, mode="eval")
     except SyntaxError as exc:
