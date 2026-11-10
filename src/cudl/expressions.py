@@ -15,7 +15,7 @@ import re
 
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _PATH_ROOT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*")
-_NUMBER = re.compile(r"^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$")
+_NUMBER = re.compile(r"^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$")
 _TEXT = re.compile(r"^[A-Za-z_][A-Za-z0-9_ -]*$")
 
 
@@ -61,7 +61,7 @@ def _parse_path(raw: str) -> tuple[str | int, ...]:
             raw_key = source[index + 1:end].strip()
             if not raw_key:
                 raise ExpressionError("An index cannot be empty.")
-            if re.fullmatch(r"0|[1-9]\\d*", raw_key):
+            if re.fullmatch(r"0|[1-9]\d*", raw_key):
                 parts.append(int(raw_key))
             elif _IDENTIFIER.fullmatch(raw_key):
                 parts.append(raw_key)
