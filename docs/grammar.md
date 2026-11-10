@@ -94,9 +94,32 @@ script
     #total = @add 10 20
 ```
 
-The parser preserves function declarations and script blocks. Function
-execution, arithmetic evaluation, scope, and runtime type behavior are future
-interpreter milestones and are not yet executed by the current prototype.
+The reference runtime now executes dynamic assignments, type-changing
+reassignment, hash-path indexing, safe arithmetic/comparison/boolean
+expressions, function calls, return values, and text interpolation. Function
+parameters and variables are dynamically typed. For example:
+
+\x60\x60\x60cudl
+script
+    #age = 21
+    #age = Harry
+
+    @greet #person
+        print Hello #person
+
+    @add #left #right
+        return #left + #right
+
+    @greet #age
+    #total = @add 10 20
+    print #total
+\x60\x60\x60
+
+Use `const #name = value` when reassignment should be rejected. The runtime
+uses a bounded, explicit expression evaluator; it does not use Python eval/exec,
+load host modules, or execute `js`/`python` blocks. The first runtime release
+does not yet implement loops, conditional blocks, asynchronous functions, or
+host-language execution.
 
 ## 5. Design components
 
@@ -147,6 +170,10 @@ dependencies are actually available.
 - `=` — assignment.
 - `->` — reserved for concise navigation/action declarations.
 - Quotes — optional for ordinary text, available for escaped or special strings.
+
+Run a file with `cudl run app.cudl` to execute its supported native `script`
+blocks. Use `cudl check app.cudl` to validate indentation and syntax without
+running it.
 
 The goal is not to remove every symbol. Each symbol should have one obvious
 purpose and should not be required when indentation or plain words are clearer.
