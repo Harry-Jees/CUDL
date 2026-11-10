@@ -1,9 +1,8 @@
 """Safe parser for the first CUDL value-expression subset.
 
-CUDL values are dynamically typed: ordinary unquoted words are text, numeric
-and boolean literals keep their natural values, and hash-prefixed paths read
-values from an explicit data mapping. Indexing is limited to safe mapping and
-sequence access; expressions never execute source code.
+CUDL values are dynamically typed. Unquoted values are ordinary text unless
+they are a number, boolean, null, or a hash-prefixed variable path. Indexing
+is limited to safe mapping and sequence access; source is never executed.
 """
 from __future__ import annotations
 
@@ -16,7 +15,6 @@ import re
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _PATH_ROOT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*")
 _NUMBER = re.compile(r"^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$")
-_TEXT = re.compile(r"^[A-Za-z_][A-Za-z0-9_ -]*$")
 
 
 class ExpressionError(ValueError):
@@ -84,7 +82,7 @@ def _parse_path(raw: str) -> tuple[str | int, ...]:
 
 
 def parse_expression(source: str) -> Expression:
-    """Parse a dynamic value or safe data path without executing code."""
+    """Parse a dynamic value or safe hash-prefixed data path without executing code."""
     raw = source.strip()
     if not raw:
         raise ExpressionError("A value is required.")
@@ -112,16 +110,12 @@ def parse_expression(source: str) -> Expression:
             raise ExpressionError("Numeric values must be finite.")
         return Expression("number", value)
 
-    if raw.startswith("#") or "." in raw or "[" in raw:
-        parts = _parse_path(raw)
-        return Expression("path", raw, parts)
+    if raw.startswith("#"):
+        return Expression("path", raw, _parse_path(raw))
 
-    if _TEXT.fullmatch(raw):
-        return Expression("string", raw)
-
-    raise ExpressionError(
-        "Expected text, a number, boolean, null, or a safe hash-prefixed data path."
-    )
+    # Plain text stays text, even when it contains dots, brackets, or
+    # parentheses. Only the explicit hash marker requests variable lookup.
+    return Expression("string", raw)
 
 
 def resolve_path(expression: Expression, data: object) -> object:
