@@ -54,7 +54,7 @@ class ParseResult:
 
 _NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*")
 _AT_NAME = re.compile(r"^@([A-Za-z_][A-Za-z0-9_-]*)")
-_VARIABLE_ASSIGNMENT = re.compile(r"^#[A-Za-z_][A-Za-z0-9_]*\\s*=\\s*\\S.*$")
+_VARIABLE_ASSIGNMENT = re.compile(r"^#[A-Za-z_][A-Za-z0-9_]*\s*=\s*\S.*$")
 
 
 def _strip_comment(text: str) -> str:
