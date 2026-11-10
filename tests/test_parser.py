@@ -32,8 +32,9 @@ def test_preserves_hash_variables_and_at_functions():
     assert script.children[0].value == "#name = Harry"
     function = script.children[1]
     assert (function.kind, function.value) == ("@greet", "#person")
-    assert script.children[2].kind == "greet"
+    assert script.children[2].kind == "@greet"
     assert script.children[2].value == "#name"
+    assert not script.children[2].children
 
 
 def test_reports_non_four_space_indentation():
