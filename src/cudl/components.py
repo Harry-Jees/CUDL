@@ -53,10 +53,15 @@ def _component_name(value: str) -> str | None:
         return None
     return name if all(char.isalnum() or char == "_" for char in name) else None
 
-def _walk(nodes):
+_SCRIPT_BLOCKS = {"script", "js", "javascript", "python", "java", "c", "cpp", "rust", "go", "swift", "kotlin"}
+
+def _walk(nodes, in_script: bool = False):
+    """Walk design nodes without treating script function declarations as components."""
     for node in nodes:
-        yield node
-        yield from _walk(node.children)
+        if not in_script:
+            yield node
+        nested_in_script = in_script or node.kind.casefold() in _SCRIPT_BLOCKS
+        yield from _walk(node.children, nested_in_script)
 
 def _property_declarations(component, path: str, diagnostics: list[Diagnostic]):
     properties = []
@@ -125,7 +130,7 @@ def _validate_instance(node, definition, path, diagnostics):
                 code="CUDL3011",
                 message=f"Invalid value for property {child.kind!r}: {exc}",
                 severity=Severity.ERROR, line=child.line, source=path,
-                suggestion="Use a literal or data path, for example: name = user.name",
+                suggestion="Use text, a literal, or a data path such as #user.name.",
             ))
     for key, prop in declared.items():
         if prop.required and key not in supplied:
@@ -133,14 +138,14 @@ def _validate_instance(node, definition, path, diagnostics):
                 code="CUDL3010",
                 message=f"Required property {prop.name!r} is missing for component {definition.name}.",
                 severity=Severity.ERROR, line=node.line, source=path,
-                suggestion=f'Pass a value with: {prop.name} = "..."',
+                suggestion=f"Pass a value with: {prop.name} = Harry",
             ))
 
 def build_component_registry(graph: ModuleGraph) -> ComponentRegistry:
     """Collect definitions and validate imports, references, and property bindings.
 
     Direct component children may declare properties with: property title
-    or property subtitle optional. Instances supply values with title = "text".
+    or property subtitle optional. Instances supply values with title = text.
     """
     registry = ComponentRegistry()
     for path, record in sorted(graph.modules.items()):
