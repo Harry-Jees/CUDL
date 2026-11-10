@@ -85,3 +85,17 @@ pytest
 
 CUDL is an evolving language specification. Syntax and APIs in this early
 prototype are subject to change.
+
+
+## Run native CUDL scripts
+
+The Python reference runtime supports dynamically typed variables, safe
+expressions, hash-path indexing, function calls and returns:
+
+```bash
+cudl check examples/hello.cudl
+cudl run examples/hello.cudl
+```
+
+Only native CUDL `script` blocks are interpreted. External-language blocks
+remain owned by their host runtimes and are never executed by this command.
