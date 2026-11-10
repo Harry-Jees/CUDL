@@ -9,7 +9,7 @@ inside the browser.
 The CUDL core parses source and serializes IR. A host build step or loader
 provides that IR to React:
 
-` .cudl source → CUDL core → CUDLIR JSON → @cudl/react → React elements `
+`.cudl source → CUDL core → CUDLIR JSON → @cudl/react → React elements`
 
 The host React application retains control of routing, state, lifecycle,
 bundling and application startup.
@@ -20,28 +20,27 @@ bundling and application startup.
 - Basic layout and text elements.
 - Lazy image elements.
 - Custom component registry.
-- Local component definitions and typed primitive property injection.
-- Safe literal and dotted data-path binding through an explicit data object.
+- Local component definitions and primitive property injection.
+- Unquoted text, numeric, boolean, and null values.
+- Safe hash-prefixed data paths with dotted properties and array/mapping indexes.
 - Runtime diagnostics for missing or unsupported property values.
 - Unknown elements are preserved as marked wrapper elements.
 - Source document and line metadata are retained where available.
 
 ## Not implemented yet
 
-- Computed expressions, operators, function calls, and automatic type coercion.
-- Defaults, slots, and cross-module component bundling.
+- Native CUDL function execution, computed expressions, and arithmetic.
 - Button actions and event handlers.
-- Cross-module component bundling and import-driven runtime resolution.
+- Defaults, slots, and cross-module component bundling.
+- Import-driven runtime resolution.
 - Themes, responsive layout engine and motion.
 - Automatic conversion from `.cudl` files to IR during a Vite build.
 
-These features will be added through the core semantic model and later adapter
-milestones. This package is an early renderer, not a production-ready release.
+This package is an early renderer, not a production-ready release.
 
+## Runtime data binding
 
-## Safe runtime data binding
-
-Pass an explicit data object as the third argument to `renderCUDL`:
+Pass the host's current data as the third argument to `renderCUDL`:
 
 ```tsx
 const ui = renderCUDL(ir, components, {
@@ -50,23 +49,32 @@ const ui = renderCUDL(ir, components, {
       profile: { display_name: "Harry" },
       avatar: "/profile.png",
     },
+    users: [{ name: "Ada" }, { name: "Harry" }],
   },
   onDiagnostic: (diagnostic) => console.warn(diagnostic),
 });
 ```
 
-A component instance can bind its properties to that data:
+CUDL uses a hash to make variable lookup explicit:
 
 ```cudl
 @ProfileCard
-    name = user.profile.display_name
-    photo = user.avatar
+    name = #user.profile.display_name
+    photo = #user.avatar
     active = true
+    subtitle = Student Developer
+    firstUser = #users[0].name
 ```
 
-Literal values and dotted paths are resolved without evaluating source code.
-Paths are read only through own properties of the supplied data object and must
-resolve to a string, number, boolean, or null. Missing paths and unsupported
-values produce runtime diagnostics (`CUDL4001` for component assignments,
-`CUDL4002` for unresolved element values). The React host remains responsible
-for supplying current state; call `renderCUDL` again when that data changes.
+Only a hash-prefixed path reads from the supplied data object. Ordinary values
+such as `profile.png` or `Student Developer` remain text, even if they contain
+dots or spaces. Indexed paths support non-negative array indexes and mapping
+keys such as `#assets[profile]`.
+
+Paths are read through own properties and must resolve to a string, number,
+boolean, or null. Missing or invalid paths produce runtime diagnostics
+(`CUDL4001` for component assignments, `CUDL4002` for unresolved element
+values). The React host remains responsible for supplying current state; call
+`renderCUDL` again when that data changes.
+
+The adapter never evaluates source code or invokes functions from CUDL values.
