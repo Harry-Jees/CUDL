@@ -56,6 +56,28 @@ _NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*")
 _AT_NAME = re.compile(r"^@([A-Za-z_][A-Za-z0-9_-]*)")
 
 
+def _strip_comment(text: str) -> str:
+    """Remove an inline double-hash comment without touching quoted text."""
+    quote: str | None = None
+    escaped = False
+    index = 0
+    while index < len(text):
+        char = text[index]
+        if quote is not None:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == quote:
+                quote = None
+        elif char in ("'", '"'):
+            quote = char
+        elif text.startswith("##", index):
+            return text[:index].rstrip()
+        index += 1
+    return text.strip()
+
+
 def _split_statement(text: str) -> tuple[str, str]:
     """Split a statement while preserving CUDL's special prefixes."""
     if text.startswith("#"):
@@ -112,7 +134,7 @@ def parse(text: str, source: str | None = None) -> ParseResult:
             ))
             continue
 
-        statement = raw[indent:].strip()
+        statement = _strip_comment(raw[indent:])
         if not statement:
             continue
 
