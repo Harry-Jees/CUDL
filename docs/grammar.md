@@ -77,20 +77,21 @@ script
     @greet #person
         print Hello #person
 
-    greet Harry
+    @greet Harry
 ```
 
-Function calls use the function name without `@`. This avoids confusing a
-function declaration with a call and keeps `@` declarations visually distinct.
-Within a `script` block, `@name` means a function declaration. In page/design
-blocks, `@Name` remains a reusable component reference.
+Function calls use `@` too. Indentation distinguishes the two: a function
+declaration has an indented body; a call has no child block. Within a `script`
+block, `@name` is a function declaration when it owns a body and a function
+call when it does not. In page/design blocks, `@Name` remains a reusable
+component reference.
 
 ```cudl
 script
     @add #a #b
         return #a + #b
 
-    #total = add 10 20
+    #total = @add 10 20
 ```
 
 The parser preserves function declarations and script blocks. Function
