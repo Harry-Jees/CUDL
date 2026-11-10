@@ -30,7 +30,7 @@ page Home
 ## Native script direction
 
 CUDL uses `#` for variables, `##` for comments, and `@` for function
-declarations. Indentation defines blocks. Values are dynamically typed and
+declarations and calls. Indentation defines blocks. Values are dynamically typed and
 ordinary text does not need quotes.
 
 ```cudl
