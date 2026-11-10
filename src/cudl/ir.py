@@ -12,8 +12,6 @@ from .parser import Document, Node
 
 IR_VERSION = 1
 
-# These are semantic categories, not reserved words. Unknown names remain
-# generic nodes so user-defined components can pass through the IR unchanged.
 _LAYOUT_KINDS = {
     "page", "header", "content", "footer", "row", "column", "grid",
     "stack", "split", "cards", "overlay", "scroll", "space",
@@ -22,7 +20,8 @@ _ELEMENT_KINDS = {
     "title", "heading", "text", "paragraph", "button", "image", "video",
     "input", "icon", "divider", "spacer", "link",
 }
-_DECLARATION_KINDS = {"component", "theme", "style", "def", "class", "import"}
+_DECLARATION_KINDS = {"component", "theme", "style", "def", "class", "import", "script"}
+_SCRIPT_BLOCKS = {"script", "js", "javascript", "python", "java", "c", "cpp", "rust", "go", "swift", "kotlin"}
 
 
 @dataclass(slots=True)
@@ -62,7 +61,9 @@ class IRDocument:
         }
 
 
-def _category(kind: str) -> str:
+def _category(kind: str, in_script: bool = False) -> str:
+    if in_script and kind.startswith("@"):
+        return "declaration"
     if kind in _LAYOUT_KINDS:
         return "layout"
     if kind in _ELEMENT_KINDS:
@@ -74,15 +75,16 @@ def _category(kind: str) -> str:
     return "generic"
 
 
-def _lower_node(node: Node) -> IRNode:
+def _lower_node(node: Node, in_script: bool = False) -> IRNode:
     kind = node.kind.casefold()
+    script_context = in_script or kind in _SCRIPT_BLOCKS
     return IRNode(
         kind=kind,
         name=kind,
         value=node.value,
         line=node.line,
-        category=_category(kind),
-        children=[_lower_node(child) for child in node.children],
+        category=_category(kind, in_script),
+        children=[_lower_node(child, script_context) for child in node.children],
     )
 
 
