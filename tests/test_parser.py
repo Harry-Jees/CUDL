@@ -63,3 +63,10 @@ def test_inline_comments_are_removed_without_changing_quoted_hashes():
     page = result.document.nodes[0]
     assert page.value == "Home"
     assert page.children[0].value == '"Keep ## inside text"'
+
+
+def test_rejects_invalid_hash_variable_statements():
+    for source in ("# = value\n", "#9name = value\n", "#name\n", "#name =\n"):
+        result = parse(source)
+        assert result.has_errors
+        assert result.diagnostics[0].code == "CUDL1004"
