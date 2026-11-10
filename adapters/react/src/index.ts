@@ -24,7 +24,7 @@ export interface CUDLComponentProps {
   name: string;
   value: string;
   sourceLine?: number;
-  properties?: Record<string, string>;
+  properties?: Record<string, unknown>;
   children?: ReactNode;
 }
 
@@ -38,12 +38,21 @@ const TAGS: Record<string, string> = {
   divider: "hr", spacer: "div",
 };
 
-function displayValue(raw = ""): string {
-  const value = raw.trim();
-  if (value.length < 2) return value;
-  const quote = value[0];
-  if ((quote !== '"' && quote !== "'") || value.at(-1) !== quote) return value;
-  return value.slice(1, -1).replace(/\\(n|r|t|\\|"|')/g, (_, escaped: string) => {
+type CUDLValue = string | number | boolean | null | undefined;
+type CUDLData = Record<string, unknown>;
+export interface CUDLRuntimeDiagnostic {
+  code: "CUDL4001" | "CUDL4002";
+  message: string;
+  line?: number;
+}
+export interface CUDLRenderOptions {
+  data?: CUDLData;
+  onDiagnostic?: (diagnostic: CUDLRuntimeDiagnostic) => void;
+}
+
+function decodeString(raw: string): string {
+  const quote = raw[0];
+  return raw.slice(1, -1).replace(/\\(n|r|t|\\|"|')/g, (_, escaped: string) => {
     const escapes: Record<string, string> = {
       n: "\n", r: "\r", t: "\t", "\\": "\\", '"': '"', "'": "'",
     };
@@ -51,12 +60,68 @@ function displayValue(raw = ""): string {
   });
 }
 
-function readAssignments(node: CUDLIRNode): Record<string, string> {
-  const values: Record<string, string> = {};
+function resolveDataPath(path: string, data: CUDLData): CUDLValue {
+  let current: unknown = data;
+  for (const part of path.split(".")) {
+    if (current === null || typeof current !== "object" ||
+        !Object.prototype.hasOwnProperty.call(current, part)) {
+      throw new Error('Data path "' + path + '" was not found.');
+    }
+    current = (current as Record<string, unknown>)[part];
+  }
+  if (current === null || typeof current === "string" ||
+      typeof current === "number" || typeof current === "boolean") {
+    return current;
+  }
+  throw new Error('Data path "' + path + '" must resolve to a primitive value.');
+}
+
+/** Resolve the safe CUDL literal/path grammar against an explicit data object. */
+export function resolveCUDLValue(
+  source: string,
+  data: CUDLData = {},
+): CUDLValue {
+  const raw = source.trim();
+  if (!raw) return "";
+  if ((raw.startsWith('"') && raw.endsWith('"')) ||
+      (raw.startsWith("'") && raw.endsWith("'"))) {
+    return decodeString(raw);
+  }
+  if (/^(true|false)$/i.test(raw)) return raw.toLowerCase() === "true";
+  if (/^(null|none)$/i.test(raw)) return null;
+  if (/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/.test(raw)) {
+    const value = Number(raw);
+    if (!Number.isFinite(value)) throw new Error("Numeric values must be finite.");
+    return value;
+  }
+  if (/^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/.test(raw)) {
+    return resolveDataPath(raw, data);
+  }
+  throw new Error("Unsupported CUDL value expression.");
+}
+
+function stringifyValue(value: unknown): string {
+  return value === null || value === undefined ? "" : String(value);
+}
+
+function readAssignments(
+  node: CUDLIRNode,
+  data: CUDLData,
+  onDiagnostic?: CUDLRenderOptions["onDiagnostic"],
+): Record<string, CUDLValue> {
+  const values: Record<string, CUDLValue> = {};
   for (const child of node.children ?? []) {
     const raw = child.value ?? "";
     if (!raw.trimStart().startsWith("=")) continue;
-    values[child.name.toLowerCase()] = displayValue(raw.trimStart().slice(1));
+    try {
+      values[child.name.toLowerCase()] = resolveCUDLValue(raw.trimStart().slice(1), data);
+    } catch (error) {
+      onDiagnostic?.({
+        code: "CUDL4001",
+        message: error instanceof Error ? error.message : "Invalid component property value.",
+        line: child.source?.line,
+      });
+    }
   }
   return values;
 }
@@ -66,19 +131,36 @@ function renderNode(
   registry: CUDLComponentRegistry,
   definitions: Map<string, CUDLIRNode>,
   key: string,
-  properties: Record<string, string> = {},
+  properties: Record<string, CUDLValue> = {},
+  data: CUDLData = {},
+  onDiagnostic?: CUDLRenderOptions["onDiagnostic"],
 ): ReactNode {
   const name = node.name.toLowerCase();
   if (name === "property" || name === "component") return null;
 
-  let value = displayValue(node.value);
-  if (Object.prototype.hasOwnProperty.call(properties, value.toLowerCase())) {
-    value = properties[value.toLowerCase()];
+  const rawValue = (node.value ?? "").trim();
+  let resolved: CUDLValue;
+  if (Object.prototype.hasOwnProperty.call(properties, rawValue.toLowerCase())) {
+    resolved = properties[rawValue.toLowerCase()];
+  } else {
+    try {
+      resolved = resolveCUDLValue(rawValue, data);
+    } catch (error) {
+      resolved = rawValue;
+      if (/^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/.test(rawValue)) {
+        onDiagnostic?.({
+          code: "CUDL4002",
+          message: error instanceof Error ? error.message : "Unable to resolve CUDL value.",
+          line: node.source?.line,
+        });
+      }
+    }
   }
+  const value = stringifyValue(resolved);
 
   if (name.startsWith("@")) {
     const componentName = name.slice(1);
-    const assigned = readAssignments(node);
+    const assigned = readAssignments(node, data, onDiagnostic);
     const CustomComponent = registry[componentName];
     const definition = definitions.get(componentName);
 
@@ -88,7 +170,7 @@ function renderNode(
         { key, name: componentName, value, sourceLine: node.source?.line, properties: assigned },
         ...(node.children ?? [])
           .filter((child) => !(child.value ?? "").trimStart().startsWith("="))
-          .map((child, index) => renderNode(child, registry, definitions, `${key}.${index}`, assigned)),
+          .map((child, index) => renderNode(child, registry, definitions, `${key}.${index}`, assigned, data, onDiagnostic)),
       );
     }
 
@@ -97,14 +179,14 @@ function renderNode(
       return createElement(
         "div",
         { key, "data-cudl-component": componentName, "data-cudl-source-line": node.source?.line },
-        ...body.map((child, index) => renderNode(child, registry, definitions, `${key}.component.${index}`, assigned)),
+        ...body.map((child, index) => renderNode(child, registry, definitions, `${key}.component.${index}`, assigned, data, onDiagnostic)),
       );
     }
   }
 
   const children = (node.children ?? [])
     .filter((child) => !(child.value ?? "").trimStart().startsWith("="))
-    .map((child, index) => renderNode(child, registry, definitions, `${key}.${index}`, properties));
+    .map((child, index) => renderNode(child, registry, definitions, `${key}.${index}`, properties, data, onDiagnostic));
 
   const CustomComponent = registry[name];
   if (CustomComponent) {
@@ -138,11 +220,13 @@ function renderNode(
 
 /** Render CUDL IR inside an existing React application.
  * Component declarations in the supplied document are indexed automatically.
- * This early renderer supports string-valued component properties only.
+ * Component properties accept safe literals and dotted paths into options.data.
+ * No source code or function calls are evaluated.
  */
 export function renderCUDL(
   document: CUDLIRDocument,
   components: CUDLComponentRegistry = {},
+  options: CUDLRenderOptions = {},
 ): ReactNode {
   if (document.type !== "CUDLIR" || document.version !== 1) {
     throw new Error("Unsupported CUDL IR document or version.");
@@ -161,6 +245,6 @@ export function renderCUDL(
     { "data-cudl-root": "", "data-cudl-source": document.source ?? undefined },
     ...document.nodes
       .filter((node) => node.name.toLowerCase() !== "component")
-      .map((node, index) => renderNode(node, components, definitions, String(index))),
+      .map((node, index) => renderNode(node, components, definitions, String(index), {}, options.data ?? {}, options.onDiagnostic)),
   );
 }
