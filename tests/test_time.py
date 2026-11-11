@@ -71,7 +71,7 @@ def test_explicit_keyframes_are_interpolated_and_loop_mode_wraps():
     assert timeline.evaluate(1250)["dot.scale"] == 2
 
 
-def test_invalid_track_bounds_and_easing_are_diagnostics():
+def test_track_cannot_extend_beyond_scene_duration():
     bundle = _bundle(
         "        timeline Broken\n"
         "            duration 500ms\n"
