@@ -22,7 +22,7 @@ bundle MotionCard
         page Home
             center
                 @WelcomeCard
-                    heading Welcome to CUDL
+                    heading = Welcome to CUDL
                 text A portable five-part application bundle
                 button Continue
                     on click @start
