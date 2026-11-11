@@ -1,0 +1,57 @@
+bundle MotionCard
+    GUIDE
+        name MotionCard
+        version 0.1
+        target universal
+        theme calm
+        time-unit ms
+
+    KIT
+        theme calm
+            background #F5F0E8
+            foreground #292521
+            accent #B98B68
+            radius 18
+
+        component WelcomeCard
+            property heading
+            card
+                title heading
+
+    PAGES
+        page Home
+            center
+                @WelcomeCard
+                    heading Welcome to CUDL
+                text A portable five-part application bundle
+                button Continue
+                    on click @start
+
+    SCRIPTS
+        #started = false
+
+        @start
+            #started = true
+            print Welcome started
+
+    TIME
+        timeline WelcomeIntro
+            duration 1400ms
+            clock relative
+            mode once
+
+            scene Entrance
+                at 0ms
+                duration 1400ms
+                track Home.WelcomeCard.opacity
+                    from 0
+                    to 1
+                    duration 800ms
+                    ease out-cubic
+
+                track Home.Continue.scale
+                    from 0.96
+                    to 1
+                    start 250ms
+                    duration 750ms
+                    ease in-out
