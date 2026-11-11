@@ -1,37 +1,32 @@
 # CUDL
 
-**Creative Unified Design Language** is an embeddable, cross-language design
-language for describing pages, reusable components, layouts, interactions,
-and design behavior inside existing applications.
+**Creative Unified Design Language** is an embeddable, cross-language language
+for describing application configuration, reusable components, pages, program
+logic, and time-based experiences inside existing applications.
 
 CUDL does not replace the host application or its runtime. A host project such
-as React, Python, Java, or C integrates CUDL through a compatible adapter. The
+as React, Python, Java, or C integrates CUDL through compatible adapters. The
 host remains responsible for application execution and lifecycle.
 
-## Current status
+## Five core parts
 
-CUDL is in its foundation stage. The repository includes an indentation-based
-parser, a versioned intermediate representation, module and component
-resolution, safe dynamic values, and an early React adapter. Native script
-execution and production-ready host integration are still under development.
+A CUDL application is organized into five sections:
 
-## First example
+- `GUIDE` — project configuration, targets, dependencies, tokens, and shared rules.
+- `KIT` — reusable components, themes, widgets, styles, and integrations.
+- `PAGES` — screens, page structure, layout, navigation, and interactions.
+- `SCRIPTS` — variables, functions, expressions, application logic, and host-language integration.
+- `TIME` — timelines, scenes, tracks, keyframes, animation, sequencing, and temporal events.
 
-```cudl
-page Home
-    header
-        title Hello, CUDL
+The full syntax and architecture proposal, including a complete five-part
+single-page example and the portable TIME model, is documented in
+[`docs/five-part-language-spec.md`](docs/five-part-language-spec.md).
 
-    content
-        text My first CUDL application
-        button Get Started
-```
+## Syntax direction
 
-## Native script direction
-
-CUDL uses `#` for variables, `##` for comments, and `@` for function
-declarations and calls. Indentation defines blocks. Values are dynamically typed and
-ordinary text does not need quotes.
+CUDL is indentation-first and dynamically typed. It uses `#` for variables,
+`##` for comments, and `@` for functions or component references according
+to context. Ordinary text does not need quotes.
 
 ```cudl
 script
@@ -44,15 +39,17 @@ script
     @greet #name
 ```
 
-This is the intended syntax direction. The current parser recognizes these
-structures, but it does not yet execute native CUDL functions or arithmetic.
+## Current status
 
-## Core project sections
+CUDL is in its foundation stage. The repository includes an indentation-based
+parser, a versioned intermediate representation, module and component
+resolution, safe dynamic values, a bounded native script runtime, and an early
+React adapter. The five-part semantic bundle and TIME engine are design targets
+and are not yet fully implemented.
 
-- `GUIDE` — project configuration, tokens, dependencies, and shared rules.
-- `KIT` — reusable components, themes, widgets, and integrations.
-- `PAGES` — screens, page structure, layout intentions, and interactions.
-- `SCRIPTS` — logic, native CUDL scripts, animations, and supported external-language blocks.
+The reference runtime supports a bounded subset of dynamic assignments,
+safe expressions, hash-path indexing, function calls, return values, and text
+interpolation. It does not execute arbitrary host-language blocks.
 
 ## Development
 
@@ -62,40 +59,21 @@ Requires Python 3.10 or newer.
 python -m pip install -e ".[dev]"
 cudl check examples/hello.cudl
 cudl parse examples/hello.cudl
+cudl run examples/hello.cudl
 pytest
 ```
 
 ## Design principles
 
 - Indentation defines native CUDL blocks.
-- A small, consistent syntax should be easy for beginners to learn.
-- Variables are dynamically typed and use an explicit `#` marker.
-- Parsing produces a framework-neutral representation.
-- Adapters translate that representation into host-framework capabilities.
-- Unsupported or malformed syntax should produce clear diagnostics rather than silently pretending it worked.
+- Beginner-friendly syntax with a small, consistent set of symbols.
+- Dynamic values and explicit hash-prefixed variable references.
+- A framework-neutral, versioned intermediate representation.
+- Portable semantics with host-specific adapters.
+- Unsupported or malformed syntax produces clear diagnostics.
+- Features are only described as implemented when parser, IR, runtime or
+  adapter, tests, documentation, and CI agree.
 
-## Roadmap
-
-1. Lexer, parser, syntax tree, and diagnostics.
-2. Intermediate representation and module resolution.
-3. Component and layout semantics.
-4. React adapter and host integration API.
-5. Native scripting and safe execution model.
-6. Additional adapters, tooling, and conformance tests.
-
-CUDL is an evolving language specification. Syntax and APIs in this early
-prototype are subject to change.
-
-
-## Run native CUDL scripts
-
-The Python reference runtime supports dynamically typed variables, safe
-expressions, hash-path indexing, function calls and returns:
-
-```bash
-cudl check examples/hello.cudl
-cudl run examples/hello.cudl
-```
-
-Only native CUDL `script` blocks are interpreted. External-language blocks
-remain owned by their host runtimes and are never executed by this command.
+CUDL is an evolving language. The five-part specification describes the
+intended direction; consult implementation tests and release notes for
+currently executable features.
