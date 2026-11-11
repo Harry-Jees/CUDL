@@ -44,11 +44,11 @@ script
 CUDL is in its foundation stage. The repository includes an indentation-based
 parser, a versioned intermediate representation, module and component
 resolution, safe dynamic values, a bounded native script runtime, and an early
-React adapter. The five-part bundle validator and section-aware application IR are implemented
+React adapter with a first five-part application entry point. The five-part bundle validator and section-aware application IR are implemented
 in the current development branch. An experimental numeric TIME compiler and
 deterministic evaluator support bounded timeline, scene, track, keyframe,
 interpolation and playback-mode semantics; host rendering, event dispatch,
-non-numeric interpolation and production adapters remain in development.
+non-numeric interpolation and production TIME adapters remain in development.
 
 The reference runtime supports a bounded subset of dynamic assignments,
 safe expressions, hash-path indexing, function calls, return values, and text
