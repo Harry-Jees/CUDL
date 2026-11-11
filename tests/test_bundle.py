@@ -112,3 +112,16 @@ def test_empty_source_reports_missing_application_sections():
 
     assert result.has_errors
     assert any(item.code == "CUDL2006" for item in result.diagnostics)
+
+def test_reports_multiple_bundle_wrappers_without_crashing():
+    result = parse_bundle(
+        "bundle First\n"
+        "    GUIDE\n"
+        "        name First\n"
+        "bundle Second\n"
+        "    PAGES\n"
+        "        page Home\n"
+    )
+
+    assert result.has_errors
+    assert any(item.code == "CUDL2001" for item in result.diagnostics)
