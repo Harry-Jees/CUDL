@@ -1,6 +1,6 @@
 # CUDL five-part language specification
 
-Status: canonical design direction; implementation is staged.
+Status: canonical design direction; the five-part bundle validator and initial numeric TIME evaluator are implemented on the development branch. Full TIME events, host rendering, capability negotiation and cross-platform adapters remain staged.
 
 CUDL (Creative Unified Design Language) is an embeddable, indentation-first language for describing application configuration, reusable UI, pages, program logic, and time-based experiences. CUDL does not replace the host application's runtime or lifecycle.
 
@@ -249,7 +249,7 @@ Events may occur at positions, scene boundaries, completion, cancellation or nam
 
 Compile TIME to a versioned Timeline IR containing stable IDs, normalized timestamps/timebase, typed target bindings, value types, keyframes, easing descriptors, playback/repeat policies, event references, source locations and capability requirements.
 
-The portable evaluator handles scheduling, interpolation, seeking and deterministic value evaluation. Host adapters handle frame delivery, drawing, native animation APIs, audio output and lifecycle integration. The core must not depend on browser timers, CSS, Android APIs, a particular OS scheduler or a specific language.
+The current experimental evaluator handles deterministic numeric interpolation, seeking by supplied position, and once/loop/ping-pong/hold playback normalization. It uses integer microseconds internally. Host adapters handle frame delivery, drawing, native animation APIs, audio output and lifecycle integration. The core must not depend on browser timers, CSS, Android APIs, a particular OS scheduler or a specific language. The current subset does not yet implement event dispatch, wall-clock scheduling, frame-based time, spring easing, colors or transforms.
 
 Adapters advertise capabilities (target types, easing, clock precision, audio/video, background execution and lifecycle). Missing capabilities produce diagnostics or an explicitly declared fallback; they must not silently alter timing semantics. Disposed targets cancel or detach their tracks. Untrusted timelines have configurable limits for duration, tracks, keyframes, recursion and event frequency.
 
