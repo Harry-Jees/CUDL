@@ -44,8 +44,11 @@ script
 CUDL is in its foundation stage. The repository includes an indentation-based
 parser, a versioned intermediate representation, module and component
 resolution, safe dynamic values, a bounded native script runtime, and an early
-React adapter. The five-part semantic bundle and TIME engine are design targets
-and are not yet fully implemented.
+React adapter. The five-part bundle validator and section-aware application IR are implemented
+in the current development branch. An experimental numeric TIME compiler and
+deterministic evaluator support bounded timeline, scene, track, keyframe,
+interpolation and playback-mode semantics; host rendering, event dispatch,
+non-numeric interpolation and production adapters remain in development.
 
 The reference runtime supports a bounded subset of dynamic assignments,
 safe expressions, hash-path indexing, function calls, return values, and text
@@ -60,6 +63,7 @@ python -m pip install -e ".[dev]"
 cudl check examples/hello.cudl
 cudl parse examples/hello.cudl
 cudl run examples/hello.cudl
+cudl bundle examples/five-part-welcome.cudl
 pytest
 ```
 
