@@ -122,7 +122,7 @@ class Timeline:
         position = Decimal(str(position_ms)) * Decimal(1000)
         if position != position.to_integral_value():
             raise ValueError("Timeline position must resolve to whole microseconds.")
-        time_us = int(position)
+        time_us = max(0, int(position))
         if self.mode == "loop" and self.duration_us:
             time_us %= self.duration_us
         elif self.mode == "ping-pong" and self.duration_us:
