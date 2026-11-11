@@ -203,8 +203,8 @@ def _compile_track(node: Node, scene_duration_us: int) -> Track:
 
     key_nodes = [item for item in node.children if item.kind.casefold() == "key"]
     if key_nodes:
-        if _child(node, "from") or _child(node, "to"):
-            raise TimeCompileError("Use either explicit keyframes or from/to shorthand, not both.")
+        if _child(node, "from") or _child(node, "to") or _child(node, "duration"):
+            raise TimeCompileError("Use explicit keyframes alone, or from/to shorthand with duration.")
         frames: list[Keyframe] = []
         for item in key_nodes:
             pieces = item.value.strip().split(maxsplit=1)
