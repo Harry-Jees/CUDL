@@ -120,6 +120,8 @@ class Timeline:
     def evaluate(self, position_ms: int | float) -> dict[str, float]:
         """Evaluate all numeric tracks at a timeline position in milliseconds."""
         position = Decimal(str(position_ms)) * Decimal(1000)
+        if not position.is_finite():
+            raise ValueError("Timeline position must be finite.")
         if position != position.to_integral_value():
             raise ValueError("Timeline position must resolve to whole microseconds.")
         time_us = max(0, int(position))
