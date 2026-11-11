@@ -11,6 +11,7 @@ from .parser import parse
 from .modules import resolve_project
 from .lexer import LexError, tokenize
 from .runtime import CUDLRuntimeError, run_script
+from .bundle import lower_bundle, parse_bundle
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -21,6 +22,7 @@ def _parser() -> argparse.ArgumentParser:
         ("check", "Parse a CUDL file and report diagnostics."),
         ("parse", "Parse a CUDL file and print its syntax tree as JSON."),
         ("tokens", "Tokenize a CUDL file and print tokens as JSON."),
+        ("bundle", "Validate a five-part bundle and print its application IR."),
     ):
         command = commands.add_parser(name, help=help_text)
         command.add_argument("file", type=Path)
@@ -52,6 +54,18 @@ def main() -> int:
     except OSError as exc:
         print(f"error: cannot read {args.file}: {exc}", file=sys.stderr)
         return 2
+
+    if args.command == "bundle":
+        result = parse_bundle(source, source=str(args.file))
+        for diagnostic in result.diagnostics:
+            location = f"{diagnostic.source or '<input>'}:{diagnostic.line}:{diagnostic.column}"
+            print(f"{location}: {diagnostic.severity.value} {diagnostic.code}: {diagnostic.message}", file=sys.stderr)
+            if diagnostic.suggestion:
+                print(f"  suggestion: {diagnostic.suggestion}", file=sys.stderr)
+        if result.has_errors:
+            return 1
+        print(json.dumps(lower_bundle(result.bundle).to_dict(), indent=2))
+        return 0
 
     if args.command == "tokens":
         try:
