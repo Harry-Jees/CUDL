@@ -91,7 +91,7 @@ def parse_bundle(source_text: str, source: str | None = None) -> BundleParseResu
                 suggestion="Keep one bundle declaration and move all five sections inside it.",
             ))
         if len(roots) != 1:
-            extra = next(node for node in roots if node.kind.casefold() != "bundle")
+            extra = next((node for node in roots if node.kind.casefold() != "bundle"), wrappers[1])
             diagnostics.append(Diagnostic(
                 code="CUDL2002",
                 message="A bundle declaration must be the only root-level statement.",
