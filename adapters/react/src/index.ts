@@ -20,6 +20,14 @@ export interface CUDLIRDocument {
   nodes: CUDLIRNode[];
 }
 
+export interface CUDLApplicationIR {
+  type: "CUDLApplicationIR";
+  version: number;
+  name?: string | null;
+  source?: string | null;
+  sections: Partial<Record<"guide" | "kit" | "pages" | "scripts" | "time", CUDLIRDocument>>;
+}
+
 export interface CUDLComponentProps {
   name: string;
   value: string;
@@ -296,5 +304,41 @@ export function renderCUDL(
     ...document.nodes
       .filter((node) => node.name.toLowerCase() !== "component")
       .map((node, index) => renderNode(node, components, definitions, String(index), {}, options.data ?? {}, options.onDiagnostic)),
+  );
+}
+
+
+/** Render the PAGES section of a five-part application bundle.
+ * Component declarations from KIT are registered as local definitions;
+ * GUIDE, SCRIPTS and TIME remain available to their respective host systems.
+ */
+export function renderCUDLApplication(
+  application: CUDLApplicationIR,
+  components: CUDLComponentRegistry = {},
+  options: CUDLRenderOptions = {},
+): ReactNode {
+  if (application.type !== "CUDLApplicationIR" || application.version !== 1) {
+    throw new Error("Unsupported CUDL application IR or version.");
+  }
+
+  const pages = application.sections.pages;
+  if (!pages || pages.type !== "CUDLIR" || pages.version !== 1) {
+    throw new Error("A React-renderable CUDL application must include PAGES IR v1.");
+  }
+
+  const kit = application.sections.kit;
+  const definitions = (kit?.nodes ?? []).filter(
+    (node) => node.name.toLowerCase() === "component",
+  );
+
+  return renderCUDL(
+    {
+      type: "CUDLIR",
+      version: 1,
+      source: application.source ?? pages.source,
+      nodes: [...definitions, ...pages.nodes],
+    },
+    components,
+    options,
   );
 }
