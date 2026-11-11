@@ -194,7 +194,8 @@ def test_ping_pong_playback_reverses_timeline_position():
     timeline = result.timelines["bounce"]
     assert timeline.evaluate(250)["dot.x"] == 2.5
     assert timeline.evaluate(1250)["dot.x"] == 7.5
-    assert timeline.evaluate(2000)["dot.x"] == 10
+    assert timeline.evaluate(1000)["dot.x"] == 10
+    assert timeline.evaluate(2000)["dot.x"] == 0
 
 
 def test_invalid_easing_is_reported():
