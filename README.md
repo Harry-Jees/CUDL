@@ -1,6 +1,6 @@
 # CUDL
 
-**Creative Unified Design Language** is an embeddable, cross-language language
+**Creative Unified Design Language** is an embeddable, cross-language design language
 for describing application configuration, reusable components, pages, program
 logic, and time-based experiences inside existing applications.
 
