@@ -82,7 +82,7 @@ def test_invalid_track_bounds_and_easing_are_diagnostics():
         "                    from 0\n"
         "                    to 1\n"
         "                    duration 700ms\n"
-        "                    ease elastic\n"
+        "                    ease out-cubic\n"
     )
     result = compile_time(bundle)
     assert result.has_errors
@@ -175,3 +175,73 @@ def test_time_compiler_rejects_unknown_track_fields():
     result = compile_time(bundle)
     assert result.has_errors
     assert any("Unexpected declaration" in item.message for item in result.diagnostics)
+
+def test_ping_pong_playback_reverses_timeline_position():
+    bundle = _bundle(
+        "        timeline Bounce\n"
+        "            duration 1000ms\n"
+        "            mode ping-pong\n"
+        "            scene Main\n"
+        "                at 0ms\n"
+        "                duration 1000ms\n"
+        "                track dot.x\n"
+        "                    from 0\n"
+        "                    to 10\n"
+        "                    duration 1000ms\n"
+    )
+    result = compile_time(bundle)
+    assert not result.has_errors
+    timeline = result.timelines["bounce"]
+    assert timeline.evaluate(250)["dot.x"] == 2.5
+    assert timeline.evaluate(1250)["dot.x"] == 7.5
+    assert timeline.evaluate(2000)["dot.x"] == 10
+
+
+def test_invalid_easing_is_reported():
+    bundle = _bundle(
+        "        timeline InvalidEase\n"
+        "            duration 1000ms\n"
+        "            scene Main\n"
+        "                at 0ms\n"
+        "                duration 1000ms\n"
+        "                track card.opacity\n"
+        "                    from 0\n"
+        "                    to 1\n"
+        "                    duration 500ms\n"
+        "                    ease elastic\n"
+    )
+    result = compile_time(bundle)
+    assert result.has_errors
+    assert any("Unsupported easing" in item.message for item in result.diagnostics)
+
+
+def test_negative_timeline_position_is_clamped_to_start():
+    bundle = _bundle(
+        "        timeline Start\n"
+        "            duration 1000ms\n"
+        "            scene Main\n"
+        "                at 0ms\n"
+        "                duration 1000ms\n"
+        "                track value.x\n"
+        "                    from 4\n"
+        "                    to 8\n"
+        "                    duration 1000ms\n"
+    )
+    timeline = compile_time(bundle).timelines["start"]
+    assert timeline.evaluate(-500)["value.x"] == 4
+
+
+def test_duplicate_keyframe_times_are_rejected():
+    bundle = _bundle(
+        "        timeline BadKeys\n"
+        "            duration 1000ms\n"
+        "            scene Main\n"
+        "                at 0ms\n"
+        "                duration 1000ms\n"
+        "                track value.x\n"
+        "                    key 0ms 0\n"
+        "                    key 0ms 1\n"
+    )
+    result = compile_time(bundle)
+    assert result.has_errors
+    assert any("strictly increasing" in item.message for item in result.diagnostics)
