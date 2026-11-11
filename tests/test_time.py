@@ -45,8 +45,8 @@ def test_compiles_and_evaluates_numeric_timeline_with_scene_offsets():
     timeline = result.timelines["intro"]
     assert timeline.evaluate(99) == {}
     assert timeline.evaluate(100)["card.opacity"] == 0
-    assert timeline.evaluate(800)["card.opacity"] > 0.9
-    assert timeline.evaluate(800)["card.opacity"] < 1
+    assert timeline.evaluate(750)["card.opacity"] > 0.9
+    assert timeline.evaluate(750)["card.opacity"] < 1
     assert timeline.evaluate(1500)["card.opacity"] == 1
 
 
