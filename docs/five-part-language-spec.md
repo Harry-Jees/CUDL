@@ -227,10 +227,10 @@ The from/to form is shorthand for two keyframes; explicit keyframes are canonica
 
 ### Timing semantics
 
-- Supported units: `ms`, `s`, `min`, `frame`.
+- Target units are `ms`, `s`, `min` and `frame`; the current experimental compiler accepts `ms`, `s` and `min` only. `frame` remains staged until explicit frame-rate support is implemented.
 - Bare durations are invalid unless a default unit is declared.
 - `at` is absolute on the parent timeline; `start` is an offset from scene start.
-- Durations are non-negative. Contradictory keyframe order is an error.
+- Offsets are non-negative; timeline, scene and track durations must be positive. Contradictory keyframe order is an error.
 - Frame timing requires an explicit frame rate; never assume 60 FPS.
 - Internally normalize time to a monotonic integer timebase to avoid accumulated floating-point drift.
 - Wall-clock scheduling is separate from animation playback and requires an explicit clock and permission.
