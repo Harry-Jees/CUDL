@@ -12,6 +12,7 @@ from .modules import resolve_project
 from .lexer import LexError, tokenize
 from .runtime import CUDLRuntimeError, run_script
 from .bundle import lower_bundle, parse_bundle
+from .time import compile_time
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -64,7 +65,19 @@ def main() -> int:
                 print(f"  suggestion: {diagnostic.suggestion}", file=sys.stderr)
         if result.has_errors:
             return 1
-        print(json.dumps(lower_bundle(result.bundle).to_dict(), indent=2))
+        time_result = compile_time(result.bundle)
+        for diagnostic in time_result.diagnostics:
+            location = str(diagnostic.source or "<input>") + f":{diagnostic.line}:{diagnostic.column}"
+            print(f"{location}: {diagnostic.severity.value} {diagnostic.code}: {diagnostic.message}", file=sys.stderr)
+            if diagnostic.suggestion:
+                print(f"  suggestion: {diagnostic.suggestion}", file=sys.stderr)
+        if time_result.has_errors:
+            return 1
+        payload = {
+            "application": lower_bundle(result.bundle).to_dict(),
+            "time": time_result.to_dict(),
+        }
+        print(json.dumps(payload, indent=2))
         return 0
 
     if args.command == "tokens":
