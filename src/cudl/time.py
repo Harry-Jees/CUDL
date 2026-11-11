@@ -185,6 +185,7 @@ def _reject_unknown_children(node: Node, allowed: set[str], owner: str) -> None:
 
 
 def _compile_track(node: Node, scene_duration_us: int) -> Track:
+    _reject_unknown_children(node, {"start", "ease", "from", "to", "duration", "key"}, "track")
     target = node.value.strip()
     if not target or any(not part for part in target.split(".")):
         raise TimeCompileError("A track needs a dotted target path, for example card.opacity.")
@@ -229,6 +230,7 @@ def _compile_track(node: Node, scene_duration_us: int) -> Track:
 
 
 def _compile_scene(node: Node) -> Scene:
+    _reject_unknown_children(node, {"at", "duration", "track"}, "scene")
     name = node.value.strip()
     if not name:
         raise TimeCompileError("A scene must have a name.")
@@ -267,6 +269,7 @@ def compile_time(bundle: ApplicationBundle) -> TimeCompileResult:
             continue
         name = node.value.strip()
         try:
+            _reject_unknown_children(node, {"duration", "mode", "clock", "scene"}, "timeline")
             if not name:
                 raise TimeCompileError("A timeline must have a name.")
             key = name.casefold()
@@ -289,6 +292,8 @@ def compile_time(bundle: ApplicationBundle) -> TimeCompileResult:
                 for item in node.children
                 if item.kind.casefold() == "scene"
             )
+            if not scenes:
+                raise TimeCompileError(f"Timeline {name!r} must contain at least one scene.")
             scene_names: set[str] = set()
             for scene in scenes:
                 scene_key = scene.name.casefold()
@@ -321,6 +326,18 @@ def _ease(progress: float, name: str) -> float:
         return progress
     if name == "step":
         return 0.0 if progress < 1.0 else 1.0
+    if name == "spring":
+        damping = 0.55
+        frequency = 8.0
+        damped = frequency * math.sqrt(1 - damping * damping)
+
+        def response(t: float) -> float:
+            return 1 - math.exp(-damping * frequency * t) * (
+                math.cos(damped * t)
+                + (damping * frequency / damped) * math.sin(damped * t)
+            )
+
+        return response(progress) / response(1.0)
     if name in {"in", "in-cubic"}:
         return progress ** (3 if name == "in-cubic" else 2)
     if name in {"out", "out-cubic"}:
