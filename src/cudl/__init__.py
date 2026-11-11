@@ -2,6 +2,7 @@
 
 from .diagnostics import Diagnostic, Severity
 from .bundle import ApplicationBundle, ApplicationIR, BundleParseResult, lower_bundle, parse_bundle
+from .time import Keyframe, Scene, TimeCompileError, TimeCompileResult, Timeline, Track, compile_time, parse_time_us
 from .expressions import Expression, ExpressionError, parse_expression, resolve_path
 from .components import ComponentDefinition, ComponentProperty, ComponentRegistry, build_component_registry
 from .lexer import LexError, Token, TokenKind, tokenize
@@ -17,6 +18,14 @@ __all__ = [
     "BundleParseResult",
     "parse_bundle",
     "lower_bundle",
+    "Keyframe",
+    "Scene",
+    "TimeCompileError",
+    "TimeCompileResult",
+    "Timeline",
+    "Track",
+    "compile_time",
+    "parse_time_us",
     "CUDLRuntimeError",
     "RuntimeResult",
     "run_script",
