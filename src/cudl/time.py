@@ -10,7 +10,6 @@ from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 import math
 import re
-from typing import Iterable
 
 from .bundle import ApplicationBundle
 from .diagnostics import Diagnostic, Severity
@@ -90,6 +89,34 @@ class Timeline:
     clock: str
     scenes: tuple[Scene, ...]
 
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "name": self.name,
+            "duration_us": self.duration_us,
+            "mode": self.mode,
+            "clock": self.clock,
+            "scenes": [
+                {
+                    "name": scene.name,
+                    "at_us": scene.at_us,
+                    "duration_us": scene.duration_us,
+                    "tracks": [
+                        {
+                            "target": track.target,
+                            "start_us": track.start_us,
+                            "easing": track.easing,
+                            "keyframes": [
+                                {"at_us": frame.at_us, "value": frame.value}
+                                for frame in track.keyframes
+                            ],
+                        }
+                        for track in scene.tracks
+                    ],
+                }
+                for scene in self.scenes
+            ],
+        }
+
     def evaluate(self, position_ms: int | float) -> dict[str, float]:
         """Evaluate all numeric tracks at a timeline position in milliseconds."""
         position = Decimal(str(position_ms)) * Decimal(1000)
@@ -125,6 +152,12 @@ class TimeCompileResult:
     @property
     def has_errors(self) -> bool:
         return any(item.severity is Severity.ERROR for item in self.diagnostics)
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "timelines": {name: timeline.to_dict() for name, timeline in self.timelines.items()},
+            "diagnostics": [item.to_dict() for item in self.diagnostics],
+        }
 
 
 def _child(node: Node, kind: str) -> Node | None:
