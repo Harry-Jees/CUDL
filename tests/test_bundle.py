@@ -1,5 +1,3 @@
-import pytest
-
 from cudl import lower_bundle, parse_bundle
 
 
