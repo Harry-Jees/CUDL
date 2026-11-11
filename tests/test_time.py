@@ -109,3 +109,41 @@ def test_multiple_tracks_evaluate_independently():
     assert not result.has_errors
     values = result.timelines["intro"].evaluate(500)
     assert values == {"card.opacity": 0.5, "card.scale": 2.0}
+
+def test_spring_easing_is_supported_and_finishes_at_target():
+    bundle = _bundle(
+        "        timeline Spring\n"
+        "            duration 1000ms\n"
+        "            scene Main\n"
+        "                at 0ms\n"
+        "                duration 1000ms\n"
+        "                track card.scale\n"
+        "                    from 0\n"
+        "                    to 1\n"
+        "                    duration 1000ms\n"
+        "                    ease spring\n"
+    )
+    result = compile_time(bundle)
+    assert not result.has_errors
+    timeline = result.timelines["spring"]
+    assert timeline.evaluate(0)["card.scale"] == 0
+    assert timeline.evaluate(1000)["card.scale"] == pytest.approx(1)
+
+
+def test_time_compiler_rejects_unknown_and_duplicate_fields():
+    bundle = _bundle(
+        "        timeline Invalid\n"
+        "            duration 1000ms\n"
+        "            duration 1200ms\n"
+        "            scene Main\n"
+        "                at 0ms\n"
+        "                duration 1000ms\n"
+        "                track card.opacity\n"
+        "                    from 0\n"
+        "                    to 1\n"
+        "                    duration 500ms\n"
+        "                    typo value\n"
+    )
+    result = compile_time(bundle)
+    assert result.has_errors
+    assert any("only once" in item.message for item in result.diagnostics)
