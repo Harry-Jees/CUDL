@@ -7,7 +7,7 @@ remain adapter responsibilities.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 import math
 import re
 
@@ -18,7 +18,7 @@ from .parser import Node
 _TIME_VALUE = re.compile(r"^([0-9]+(?:\.[0-9]+)?)(ms|s|min)$", re.IGNORECASE)
 _NUMBER = re.compile(r"^-?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)$")
 _MODES = {"once", "loop", "ping-pong", "hold"}
-_EASINGS = {"linear", "in", "out", "in-out", "in-cubic", "out-cubic", "in-out-cubic", "step"}
+_EASINGS = {"linear", "in", "out", "in-out", "in-cubic", "out-cubic", "in-out-cubic", "step", "spring"}
 
 
 class TimeCompileError(ValueError):
@@ -166,10 +166,22 @@ def _child(node: Node, kind: str) -> Node | None:
 
 
 def _field_value(node: Node, kind: str, default: str | None = None) -> str | None:
-    field_node = _child(node, kind)
-    if field_node is None:
+    matches = [item for item in node.children if item.kind.casefold() == kind]
+    if len(matches) > 1:
+        raise TimeCompileError(f"The {kind!r} field may appear only once.")
+    if not matches:
         return default
-    return field_node.value.strip()
+    return matches[0].value.strip()
+
+
+def _reject_unknown_children(node: Node, allowed: set[str], owner: str) -> None:
+    unexpected = [
+        child for child in node.children
+        if child.kind.casefold() not in allowed
+    ]
+    if unexpected:
+        names = ", ".join(repr(item.kind) for item in unexpected)
+        raise TimeCompileError(f"Unexpected declaration(s) inside {owner}: {names}.")
 
 
 def _compile_track(node: Node, scene_duration_us: int) -> Track:
