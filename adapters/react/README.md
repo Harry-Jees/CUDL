@@ -17,6 +17,8 @@ bundling and application startup.
 ## Current support
 
 - CUDL IR v1 input.
+- Five-part application IR v1 input through `renderCUDLApplication`.
+- Component definitions from KIT are made available to the PAGES renderer.
 - Basic layout and text elements.
 - Lazy image elements.
 - Custom component registry.
@@ -78,3 +80,23 @@ values). The React host remains responsible for supplying current state; call
 `renderCUDL` again when that data changes.
 
 The adapter never evaluates source code or invokes functions from CUDL values.
+
+
+## Five-part application bundles
+
+The Python core can validate a complete application and emit
+`CUDLApplicationIR`. Pass that object to the application renderer:
+
+```tsx
+import { renderCUDLApplication } from "@cudl/react";
+
+const ui = renderCUDLApplication(applicationIR, components, {
+  data: { user: { name: "Harry" } },
+  onDiagnostic: console.warn,
+});
+```
+
+The React adapter renders PAGES and indexes reusable component declarations
+from KIT. GUIDE configuration remains a host/build concern. SCRIPTS execution
+and TIME playback are not automatically run by React; the host must explicitly
+connect those capabilities when their adapters are available.
