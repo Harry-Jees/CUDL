@@ -17,6 +17,7 @@ from .parser import Node
 
 _TIME_VALUE = re.compile(r"^([0-9]+(?:\.[0-9]+)?)(ms|s|min)$", re.IGNORECASE)
 _NUMBER = re.compile(r"^-?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)$")
+_TARGET_SEGMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*$")
 _MODES = {"once", "loop", "ping-pong", "hold"}
 _EASINGS = {"linear", "in", "out", "in-out", "in-cubic", "out-cubic", "in-out-cubic", "step", "spring"}
 
@@ -189,8 +190,10 @@ def _reject_unknown_children(node: Node, allowed: set[str], owner: str) -> None:
 def _compile_track(node: Node, scene_duration_us: int) -> Track:
     _reject_unknown_children(node, {"start", "ease", "from", "to", "duration", "key"}, "track")
     target = node.value.strip()
-    if not target or any(not part for part in target.split(".")):
-        raise TimeCompileError("A track needs a dotted target path, for example card.opacity.")
+    if not target or any(not _TARGET_SEGMENT.fullmatch(part) for part in target.split(".")):
+        raise TimeCompileError(
+            "A track target must be a dotted path of identifiers, for example card.opacity."
+        )
     start_raw = _field_value(node, "start", "0ms")
     assert start_raw is not None
     start_us = parse_time_us(start_raw)
@@ -245,12 +248,20 @@ def _compile_scene(node: Node) -> Scene:
     duration_us = parse_time_us(duration_raw)
     if duration_us <= 0:
         raise TimeCompileError(f"Scene {name!r} duration must be greater than zero.")
-    tracks = tuple(
+    tracks_list = [
         _compile_track(item, duration_us)
         for item in node.children
         if item.kind.casefold() == "track"
-    )
-    return Scene(name=name, at_us=at_us, duration_us=duration_us, tracks=tracks)
+    ]
+    seen_targets: set[str] = set()
+    for track in tracks_list:
+        target_key = track.target.casefold()
+        if target_key in seen_targets:
+            raise TimeCompileError(
+                f"Scene {name!r} targets {track.target!r} more than once."
+            )
+        seen_targets.add(target_key)
+    return Scene(name=name, at_us=at_us, duration_us=duration_us, tracks=tuple(tracks_list))
 
 
 def compile_time(bundle: ApplicationBundle) -> TimeCompileResult:

@@ -227,10 +227,10 @@ The from/to form is shorthand for two keyframes; explicit keyframes are canonica
 
 ### Timing semantics
 
-- Supported units: `ms`, `s`, `min`, `frame`.
+- Target units are `ms`, `s`, `min` and `frame`; the current experimental compiler accepts `ms`, `s` and `min` only. `frame` remains staged until explicit frame-rate support is implemented.
 - Bare durations are invalid unless a default unit is declared.
 - `at` is absolute on the parent timeline; `start` is an offset from scene start.
-- Durations are non-negative. Contradictory keyframe order is an error.
+- Offsets are non-negative; timeline, scene and track durations must be positive. Contradictory keyframe order is an error.
 - Frame timing requires an explicit frame rate; never assume 60 FPS.
 - Internally normalize time to a monotonic integer timebase to avoid accumulated floating-point drift.
 - Wall-clock scheduling is separate from animation playback and requires an explicit clock and permission.
@@ -249,7 +249,7 @@ Events may occur at positions, scene boundaries, completion, cancellation or nam
 
 Compile TIME to a versioned Timeline IR containing stable IDs, normalized timestamps/timebase, typed target bindings, value types, keyframes, easing descriptors, playback/repeat policies, event references, source locations and capability requirements.
 
-The current experimental evaluator handles deterministic numeric interpolation, seeking by supplied position, and once/loop/ping-pong/hold playback normalization. It uses integer microseconds internally. Host adapters handle frame delivery, drawing, native animation APIs, audio output and lifecycle integration. The core must not depend on browser timers, CSS, Android APIs, a particular OS scheduler or a specific language. The current subset does not yet implement event dispatch, wall-clock scheduling, frame-based time, colors or transforms. It supports linear, quadratic/cubic in/out/in-out, step and deterministic spring easing for numeric tracks.
+The current experimental evaluator handles deterministic numeric interpolation, seeking by supplied position, and once/loop/ping-pong/hold playback normalization. It uses integer microseconds internally. Track targets must be dot-separated identifiers, and a scene may bind a target only once (case-insensitively); separate scenes may address the same target. Host adapters handle frame delivery, drawing, native animation APIs, audio output and lifecycle integration. The core must not depend on browser timers, CSS, Android APIs, a particular OS scheduler or a specific language. The current subset does not yet implement event dispatch, wall-clock scheduling, frame-based time, colors or transforms. It supports linear, quadratic/cubic in/out/in-out, step and deterministic spring easing for numeric tracks.
 
 Adapters advertise capabilities (target types, easing, clock precision, audio/video, background execution and lifecycle). Missing capabilities produce diagnostics or an explicitly declared fallback; they must not silently alter timing semantics. Disposed targets cancel or detach their tracks. Untrusted timelines have configurable limits for duration, tracks, keyframes, recursion and event frequency.
 
@@ -361,18 +361,18 @@ This specification is the target contract, not a statement that all features exi
 | Dynamic assignment and safe expressions | Required | Implemented subset |
 | Functions and returns | Required | Implemented subset |
 | Conditionals and loops | Required | Planned |
-| Five-part semantic bundle | Required | Integration pending |
-| Timeline syntax and Timeline IR | Required | Design only |
-| Portable timeline evaluator | Required | Not implemented |
-| React/native timeline adapters | Required | Not implemented |
+| Five-part semantic bundle | Required | Implemented subset: wrapper/section validation and versioned application IR; deeper section semantics remain staged |
+| Timeline syntax and timeline model | Required | Experimental numeric timelines/scenes/tracks/keyframes; serialized separately from application IR |
+| Portable timeline evaluator | Required | Implemented experimental numeric subset with integer-microsecond evaluation and bounded playback modes |
+| React/native timeline adapters | Required | React renders KIT/PAGES; TIME playback adapters are not implemented |
 | Capability negotiation | Required | Planned |
 
-Implementation order:
-1. Typed section nodes and semantic validation for all five sections.
-2. Versioned Timeline IR schema and serialization tests.
-3. Deterministic time normalization and pure track evaluation.
-4. Scene scheduling, keyframes, easing and playback.
-5. SCRIPTS event bindings with explicit side-effect rules.
-6. React adapter, then additional adapters against a shared conformance suite.
+Remaining implementation order:
+1. Add section-specific semantic validation for GUIDE, KIT, PAGES and SCRIPTS while preserving the shared application IR.
+2. Promote the experimental numeric timeline model into a versioned Timeline IR within the application bundle.
+3. Add explicit TIME event dispatch and SCRIPTS bindings with side-effect and cancellation rules.
+4. Extend interpolation to colors, transforms and discrete values with documented semantics.
+5. Add a React TIME playback adapter, then additional host adapters against a shared conformance suite.
+6. Add capability negotiation and conformance fixtures for clock precision, lifecycle and unsupported targets.
 
 A feature is implemented only when parser, IR, runtime/adapter, tests, docs and CI agree.

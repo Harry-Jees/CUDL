@@ -246,3 +246,42 @@ def test_duplicate_keyframe_times_are_rejected():
     result = compile_time(bundle)
     assert result.has_errors
     assert any("strictly increasing" in item.message for item in result.diagnostics)
+
+
+@pytest.mark.parametrize("target", ["card..opacity", "card.opacity[0]", "card opacity", "card.@opacity"])
+def test_track_target_must_be_a_dotted_identifier_path(target):
+    bundle = _bundle(
+        "        timeline InvalidTarget\n"
+        "            duration 1000ms\n"
+        "            scene Main\n"
+        "                at 0ms\n"
+        "                duration 1000ms\n"
+        f"                track {target}\n"
+        "                    from 0\n"
+        "                    to 1\n"
+        "                    duration 500ms\n"
+    )
+    result = compile_time(bundle)
+    assert result.has_errors
+    assert any("dotted path of identifiers" in item.message for item in result.diagnostics)
+
+
+def test_duplicate_track_targets_in_one_scene_are_rejected_case_insensitively():
+    bundle = _bundle(
+        "        timeline Ambiguous\n"
+        "            duration 1000ms\n"
+        "            scene Main\n"
+        "                at 0ms\n"
+        "                duration 1000ms\n"
+        "                track card.opacity\n"
+        "                    from 0\n"
+        "                    to 1\n"
+        "                    duration 500ms\n"
+        "                track Card.Opacity\n"
+        "                    from 1\n"
+        "                    to 0\n"
+        "                    duration 500ms\n"
+    )
+    result = compile_time(bundle)
+    assert result.has_errors
+    assert any("targets" in item.message and "more than once" in item.message for item in result.diagnostics)
