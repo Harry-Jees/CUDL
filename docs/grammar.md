@@ -129,8 +129,8 @@ KIT
         radius = 18
 
     component WelcomeCard
-        property = heading
-        property = subtitle
+        property heading
+        property subtitle optional
         card
             title heading
             text subtitle
