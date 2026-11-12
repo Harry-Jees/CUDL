@@ -12,6 +12,7 @@ from .modules import resolve_project
 from .lexer import LexError, tokenize
 from .runtime import CUDLRuntimeError, run_script
 from .bundle import lower_bundle, parse_bundle
+from .indermos import analyze_project
 from .time import compile_time
 
 
@@ -32,12 +33,15 @@ def _parser() -> argparse.ArgumentParser:
     graph = commands.add_parser("graph", help="Resolve project imports and print the module graph.")
     graph.add_argument("project", type=Path)
     graph.add_argument("entry", help="Entry module path relative to the project root.")
+    analyze = commands.add_parser("analyze", help="Identify host stacks and declared dependencies.")
+    analyze.add_argument("project", type=Path)
+    analyze.add_argument("--entry", help="Optional CUDL entry module path relative to the project root.")
     return cli
 
 
 def main() -> int:
     args = _parser().parse_args()
-    if args.command == "graph":
+    if args.command in {"graph", "analyze"}:
         if not args.project.is_dir():
             print(f"error: project directory does not exist: {args.project}", file=sys.stderr)
             return 2
@@ -46,9 +50,13 @@ def main() -> int:
             for path in sorted(args.project.rglob("*.cudl"))
             if path.is_file()
         }
-        graph = resolve_project(sources, args.entry)
-        print(json.dumps(graph.to_dict(), indent=2))
-        return 1 if graph.has_errors else 0
+        if args.command == "graph":
+            graph = resolve_project(sources, args.entry)
+            print(json.dumps(graph.to_dict(), indent=2))
+            return 1 if graph.has_errors else 0
+        analysis = analyze_project(sources, entry=args.entry)
+        print(json.dumps(analysis.to_dict(), indent=2))
+        return 0
 
     try:
         source = args.file.read_text(encoding="utf-8")
