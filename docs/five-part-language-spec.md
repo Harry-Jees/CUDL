@@ -95,7 +95,7 @@ KIT
         radius = 18
 
     component Navigation
-        property = active
+        property active
         route = android
             device = phone
             use = AndroidPhoneNavigation
