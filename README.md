@@ -80,7 +80,7 @@ currently implemented.
 
 ## Configuration and routing
 
-GUIDE and KIT configuration uses explicit assignments (`name = value`). Built-in keywords and section names are case-insensitive. A single application file can contain all five sections in any order; each section may appear once.
+GUIDE and KIT configuration uses explicit assignments (`name = value`). Built-in keywords, section names and identifier lookup are case-insensitive. A single application file can contain all five sections in any order; each section may appear once.
 
 Device routing supports a GUIDE-level default map and component-specific overrides. Rules can match platform, device class, width range, input mode and required capabilities. Component-local rules take precedence over global rules, then the declared `default` route is used. PICKER selects native script blocks for an explicit host profile; it does not execute them or install dependencies.
 
