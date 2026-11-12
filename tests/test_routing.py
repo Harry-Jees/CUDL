@@ -148,3 +148,13 @@ def test_compiles_global_and_local_routes_from_complete_application():
     assert not result.diagnostics
     resolution = resolve_component_route("Header", result.routes, DeviceContext("android"))
     assert resolution.implementation == "LocalHeader"
+
+
+def test_global_route_requires_component_assignment():
+    guide = parse(
+        "GUIDE\n"
+        "    route = android\n"
+        "        use = UnscopedAndroidRoute\n"
+    )
+    result = compile_global_routes(guide.document.nodes[0].children)
+    assert any("requires 'component" in item for item in result.diagnostics)
