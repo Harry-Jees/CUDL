@@ -1,5 +1,5 @@
 from cudl.parser import parse
-from cudl.routing import DeviceContext, compile_component_routes, resolve_component_route
+from cudl.routing import (DeviceContext, compile_component_routes, compile_global_routes, merge_route_tables, resolve_component_route)
 
 
 def _routes(source):
@@ -90,3 +90,40 @@ def test_route_resolution_is_case_insensitive_for_keywords_and_names():
     )
     resolution = resolve_component_route("navigation", result.routes, DeviceContext("ANDROID", "PHONE"))
     assert resolution.implementation == "MobileNavigation"
+
+
+def test_supports_global_route_map_and_local_component_override():
+    guide = parse(
+        "GUIDE\\n"
+        "    route = android\\n"
+        "        component = Navigation\\n"
+        "        use = GlobalAndroidNavigation\\n"
+        "    route = default\\n"
+        "        component = Navigation\\n"
+        "        use = GlobalFallbackNavigation\\n"
+    )
+    kit = parse(
+        "KIT\\n"
+        "    component Navigation\\n"
+        "        route = android\\n"
+        "            use = LocalAndroidNavigation\\n"
+    )
+    global_result = compile_global_routes(guide.document.nodes[0].children)
+    local_result = compile_component_routes(kit.document.nodes[0].children)
+    assert not global_result.diagnostics
+    assert not local_result.diagnostics
+    combined = merge_route_tables(global_result.routes, local_result.routes)
+    result = resolve_component_route("Navigation", combined, DeviceContext("android", "phone"))
+    assert result.implementation == "LocalAndroidNavigation"
+
+
+def test_global_route_map_uses_default_for_unlisted_platform():
+    guide = parse(
+        "GUIDE\\n"
+        "    route = default\\n"
+        "        component = Header\\n"
+        "        use = UniversalHeader\\n"
+    )
+    routes = compile_global_routes(guide.document.nodes[0].children)
+    result = resolve_component_route("Header", routes.routes, DeviceContext("ios", "tablet"))
+    assert result.implementation == "UniversalHeader"
