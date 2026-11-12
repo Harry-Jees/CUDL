@@ -72,6 +72,45 @@ class ApplicationIR:
         }
 
 
+def _validate_configuration_assignments(
+    section_name: str,
+    nodes: list[Node],
+    diagnostics: list[Diagnostic],
+    source: str | None,
+) -> None:
+    """Require explicit equals assignments for GUIDE/KIT configuration values."""
+    def require_assignment(node: Node, label: str) -> None:
+        if not node.value.lstrip().startswith("="):
+            diagnostics.append(Diagnostic(
+                code="CUDL2007",
+                message=f"{section_name.upper()} {label} must use an equals assignment.",
+                severity=Severity.ERROR,
+                line=node.line,
+                source=source,
+                suggestion="Use: name = value",
+            ))
+
+    for node in nodes:
+        kind = node.kind.casefold()
+        if section_name == "guide":
+            require_assignment(node, kind)
+            if kind == "route":
+                for child in node.children:
+                    require_assignment(child, f"route field {child.kind}")
+        elif section_name == "kit":
+            if kind == "component":
+                for child in node.children:
+                    if child.kind.casefold() == "route":
+                        require_assignment(child, "component route")
+                        for field_node in child.children:
+                            require_assignment(field_node, f"route field {field_node.kind}")
+                continue
+            require_assignment(node, kind)
+            if kind in {"theme", "style"}:
+                for token in node.children:
+                    require_assignment(token, f"{kind} token {token.kind}")
+
+
 def parse_bundle(source_text: str, source: str | None = None) -> BundleParseResult:
     """Parse and validate an application bundle without changing legacy parse()."""
     parsed = parse(source_text, source=source)
@@ -130,6 +169,8 @@ def parse_bundle(source_text: str, source: str | None = None) -> BundleParseResu
             ))
             continue
         sections[section_name] = list(node.children)
+        if section_name in {"guide", "kit"}:
+            _validate_configuration_assignments(section_name, list(node.children), diagnostics, source)
 
     if not sections:
         diagnostics.append(Diagnostic(
