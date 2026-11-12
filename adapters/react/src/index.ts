@@ -11,6 +11,7 @@ export interface CUDLIRNode {
   category: string;
   source?: { line?: number };
   children?: CUDLIRNode[];
+  raw_source?: string | null;
 }
 
 export interface CUDLIRDocument {
@@ -46,19 +47,29 @@ const TAGS: Record<string, string> = {
   divider: "hr", spacer: "div",
 };
 
-const NON_RENDERING_BLOCKS = new Set(["script", "js", "javascript", "python", "java", "c", "cpp", "rust", "go", "swift", "kotlin"]);
+const NON_RENDERING_BLOCKS = new Set(["script", "js", "javascript", "ts", "typescript", "python", "java", "c", "cpp", "rust", "go", "swift", "kotlin", "json"]);
 
 type CUDLValue = string | number | boolean | null | undefined;
 type CUDLData = Record<string, unknown>;
 type CUDLPathPart = string | number;
 
 export interface CUDLRuntimeDiagnostic {
-  code: "CUDL4001" | "CUDL4002";
+  code: "CUDL4001" | "CUDL4002" | "CUDL4003";
   message: string;
   line?: number;
 }
+export interface CUDLDeviceContext {
+  platform: string;
+  device?: string;
+  width?: number;
+  input?: string;
+  capabilities?: string[];
+}
+
 export interface CUDLRenderOptions {
   data?: CUDLData;
+  device?: CUDLDeviceContext;
+  globalRoutes?: CUDLIRNode[];
   onDiagnostic?: (diagnostic: CUDLRuntimeDiagnostic) => void;
 }
 
@@ -184,6 +195,145 @@ function readAssignments(
   return values;
 }
 
+function assignmentValue(node: CUDLIRNode): string | undefined {
+  const raw = (node.value ?? "").trim();
+  return raw.startsWith("=") ? raw.slice(1).trim() : undefined;
+}
+
+function childAssignment(node: CUDLIRNode, name: string): string | undefined {
+  const child = (node.children ?? []).find((item) => item.name.toLowerCase() === name);
+  return child ? assignmentValue(child) : undefined;
+}
+
+interface RouteCandidate {
+  implementation: string;
+  platform: string;
+  deviceSpecificity: number;
+  widthSpecificity: number;
+  inputSpecificity: number;
+  capabilitySpecificity: number;
+  priority: number;
+  local: number;
+  order: number;
+}
+
+function selectRouteImplementation(
+  componentName: string,
+  localRoutes: CUDLIRNode[],
+  globalRoutes: CUDLIRNode[],
+  device?: CUDLDeviceContext,
+): string | undefined {
+  const candidates: RouteCandidate[] = [];
+  let order = 0;
+  const collect = (routes: CUDLIRNode[], local: number) => {
+    for (const route of routes) {
+      if (route.name.toLowerCase() !== "route") continue;
+      const platform = (assignmentValue(route) ?? "").toLowerCase();
+      const globalComponent = childAssignment(route, "component");
+      if (globalComponent && globalComponent.toLowerCase() !== componentName.toLowerCase()) continue;
+      if (!platform) continue;
+      const routeDevice = (childAssignment(route, "device") ?? "any").toLowerCase();
+      const input = (childAssignment(route, "input") ?? "").toLowerCase();
+      const minRaw = childAssignment(route, "min-width");
+      const maxRaw = childAssignment(route, "max-width");
+      const min = minRaw === undefined ? undefined : Number(minRaw);
+      const max = maxRaw === undefined ? undefined : Number(maxRaw);
+      const required = (childAssignment(route, "requires") ?? "")
+        .split(",").map((value) => value.trim().toLowerCase()).filter(Boolean);
+      const priority = Number(childAssignment(route, "priority") ?? "0");
+      if (!Number.isFinite(priority) || (minRaw !== undefined && !Number.isFinite(min)) ||
+          (maxRaw !== undefined && !Number.isFinite(max))) {
+        order += 1;
+        continue;
+      }
+      const platformMatches = platform === "default" ||
+        (!!device && platform === device.platform.toLowerCase());
+      const deviceMatches = routeDevice === "any" ||
+        (!!device && routeDevice === (device.device ?? "any").toLowerCase());
+      const widthMatches = (min === undefined || (!!device && device.width !== undefined && device.width >= min)) &&
+        (max === undefined || (!!device && device.width !== undefined && device.width <= max));
+      const inputMatches = !input || (!!device && input === (device.input ?? "").toLowerCase());
+      const capabilities = new Set((device?.capabilities ?? []).map((value) => value.toLowerCase()));
+      const capabilitiesMatch = required.every((value) => capabilities.has(value));
+      if (!platformMatches || !deviceMatches || !widthMatches || !inputMatches || !capabilitiesMatch) {
+        order += 1;
+        continue;
+      }
+      const implementation = childAssignment(route, "use");
+      if (!implementation) {
+        order += 1;
+        continue;
+      }
+      candidates.push({
+        implementation,
+        platform,
+        deviceSpecificity: routeDevice === "any" ? 0 : 1,
+        widthSpecificity: minRaw !== undefined || maxRaw !== undefined ? 1 : 0,
+        inputSpecificity: input ? 1 : 0,
+        capabilitySpecificity: required.length,
+        priority,
+        local,
+        order,
+      });
+      order += 1;
+    }
+  };
+  collect(globalRoutes, 0);
+  collect(localRoutes, 1);
+  const specific = candidates.filter((candidate) => candidate.platform !== "default");
+  const pool = specific.length ? specific : candidates;
+  pool.sort((a, b) =>
+    b.deviceSpecificity - a.deviceSpecificity ||
+    b.widthSpecificity - a.widthSpecificity ||
+    b.inputSpecificity - a.inputSpecificity ||
+    b.capabilitySpecificity - a.capabilitySpecificity ||
+    b.priority - a.priority ||
+    b.local - a.local ||
+    a.order - b.order
+  );
+  return pool[0]?.implementation;
+}
+
+function applyPlatformRoutes(
+  definitions: Map<string, CUDLIRNode>,
+  registry: CUDLComponentRegistry,
+  options: CUDLRenderOptions,
+): CUDLComponentRegistry {
+  const resolvedRegistry: CUDLComponentRegistry = { ...registry };
+  for (const [logicalName, definition] of definitions.entries()) {
+    const localRoutes = (definition.children ?? []).filter(
+      (child) => child.name.toLowerCase() === "route",
+    );
+    const globalRoutes = options.globalRoutes ?? [];
+    if (!localRoutes.length && !globalRoutes.some(
+      (route) => childAssignment(route, "component")?.toLowerCase() === logicalName,
+    )) continue;
+    const implementation = selectRouteImplementation(
+      logicalName, localRoutes, globalRoutes, options.device,
+    );
+    if (!implementation) {
+      options.onDiagnostic?.({
+        code: "CUDL4003",
+        message: "No compatible route or default implementation was found for component " + logicalName + ".",
+        line: definition.source?.line,
+      });
+      continue;
+    }
+    const key = implementation.toLowerCase();
+    const targetDefinition = definitions.get(key);
+    if (targetDefinition) definitions.set(logicalName, targetDefinition);
+    else if (resolvedRegistry[key]) resolvedRegistry[logicalName] = resolvedRegistry[key];
+    else {
+      options.onDiagnostic?.({
+        code: "CUDL4003",
+        message: "Route for " + logicalName + " refers to missing implementation " + implementation + ".",
+        line: definition.source?.line,
+      });
+    }
+  }
+  return resolvedRegistry;
+}
+
 function renderNode(
   node: CUDLIRNode,
   registry: CUDLComponentRegistry,
@@ -233,7 +383,7 @@ function renderNode(
     }
 
     if (definition) {
-      const body = (definition.children ?? []).filter((child) => child.name !== "property");
+      const body = (definition.children ?? []).filter((child) => child.name !== "property" && child.name !== "route");
       return createElement(
         "div",
         { key, "data-cudl-component": componentName, "data-cudl-source-line": node.source?.line },
@@ -297,13 +447,14 @@ export function renderCUDL(
       if (componentName) definitions.set(componentName, node);
     }
   }
+  const resolvedRegistry = applyPlatformRoutes(definitions, components, options);
 
   return createElement(
     "div",
     { "data-cudl-root": "", "data-cudl-source": document.source ?? undefined },
     ...document.nodes
       .filter((node) => node.name.toLowerCase() !== "component")
-      .map((node, index) => renderNode(node, components, definitions, String(index), {}, options.data ?? {}, options.onDiagnostic)),
+      .map((node, index) => renderNode(node, resolvedRegistry, definitions, String(index), {}, options.data ?? {}, options.onDiagnostic)),
   );
 }
 
@@ -330,6 +481,9 @@ export function renderCUDLApplication(
   const definitions = (kit?.nodes ?? []).filter(
     (node) => node.name.toLowerCase() === "component",
   );
+  const globalRoutes = (application.sections.guide?.nodes ?? []).filter(
+    (node) => node.name.toLowerCase() === "route",
+  );
 
   return renderCUDL(
     {
@@ -339,6 +493,6 @@ export function renderCUDLApplication(
       nodes: [...definitions, ...pages.nodes],
     },
     components,
-    options,
+    { ...options, globalRoutes },
   );
 }
