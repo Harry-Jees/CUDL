@@ -5,7 +5,7 @@ def test_parses_all_five_sections_inside_named_bundle():
     result = parse_bundle(
         "bundle WelcomeApp\n"
         "    GUIDE\n"
-        "        name WelcomeApp\n"
+        "        name = WelcomeApp\n"
         "    KIT\n"
         "        component Card\n"
         "    PAGES\n"
@@ -84,7 +84,7 @@ def test_bundle_wrapper_must_be_the_only_root_statement():
         "    PAGES\n"
         "        page Home\n"
         "GUIDE\n"
-        "    name App\n"
+        "    name = App\n"
     )
 
     assert result.has_errors
@@ -126,7 +126,7 @@ def test_reports_multiple_bundle_wrappers_without_crashing():
     result = parse_bundle(
         "bundle First\n"
         "    GUIDE\n"
-        "        name First\n"
+        "        name = First\n"
         "bundle Second\n"
         "    PAGES\n"
         "        page Home\n"
@@ -134,3 +134,15 @@ def test_reports_multiple_bundle_wrappers_without_crashing():
 
     assert result.has_errors
     assert any(item.code == "CUDL2001" for item in result.diagnostics)
+
+
+def test_requires_equals_for_guide_and_kit_configuration():
+    result = parse_bundle(
+        "GUIDE\\n"
+        "    name App\\n"
+        "KIT\\n"
+        "    theme = warm\\n"
+        "        background #ffffff\\n"
+    )
+    assert result.has_errors
+    assert sum(item.code == "CUDL2007" for item in result.diagnostics) == 2
