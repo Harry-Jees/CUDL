@@ -38,3 +38,28 @@ def test_detects_conflicting_declared_versions_without_installing():
 def test_rejects_paths_outside_supplied_project_root():
     with pytest.raises(ValueError, match="escapes"):
         analyze_project({"../secrets.txt": "not read"})
+
+
+def test_extracts_pep621_swiftpm_and_nuget_dependencies():
+    result = analyze_project({
+        "pyproject.toml": """[project]
+dependencies = [
+    "httpx>=0.27",
+    "pydantic[email]==2.8.0",
+]
+""",
+        "Package.swift": """let package = Package(
+    dependencies: [
+        .package(url: "https://example.test/SwiftThing.git", from: "1.2.3")
+    ]
+)
+""",
+        "App.csproj": """<Project><ItemGroup>
+<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+</ItemGroup></Project>""",
+    })
+    found = {(item.ecosystem, item.name, item.version) for item in result.dependencies}
+    assert ("pypi", "httpx", "0.27") in found
+    assert ("pypi", "pydantic", "2.8.0") in found
+    assert ("swiftpm", "SwiftThing", "1.2.3") in found
+    assert ("nuget", "Newtonsoft.Json", "13.0.3") in found
