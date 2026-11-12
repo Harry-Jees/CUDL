@@ -161,6 +161,29 @@ def resolve_component_route(
             item.priority,
         ), reverse=True)
         chosen = candidates[0]
+        rank = (
+            chosen.device != "any",
+            chosen.min_width is not None or chosen.max_width is not None,
+            chosen.input is not None,
+            len(chosen.requires),
+            chosen.priority,
+        )
+        tied = [
+            item for item in candidates
+            if (
+                item.device != "any",
+                item.min_width is not None or item.max_width is not None,
+                item.input is not None,
+                len(item.requires),
+                item.priority,
+            ) == rank
+        ]
+        implementations = {item.implementation.casefold() for item in tied}
+        if len(implementations) > 1:
+            return RouteResolution(
+                component, None, None,
+                "ambiguous matching routes; adjust constraints or priority",
+            )
         return RouteResolution(component, chosen.implementation, chosen, "matched platform/device route")
 
     fallback = [
@@ -170,5 +193,11 @@ def resolve_component_route(
     if fallback:
         fallback.sort(key=lambda item: item.priority, reverse=True)
         chosen = fallback[0]
+        tied = [item for item in fallback if item.priority == chosen.priority]
+        if len({item.implementation.casefold() for item in tied}) > 1:
+            return RouteResolution(
+                component, None, None,
+                "ambiguous default routes; assign distinct priorities",
+            )
         return RouteResolution(component, chosen.implementation, chosen, "matched default route")
     return RouteResolution(component, None, None, "no compatible route or default implementation")
