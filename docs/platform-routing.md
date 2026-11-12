@@ -103,6 +103,13 @@ SCRIPTS
         { "label": "Hello" }
 ```
 
+The Python core exposes `filter_scripts(nodes, host)` and
+`filter_scripts_for_hosts(nodes, hosts)`. For routes, use
+`compile_application_routes(bundle)` to combine GUIDE and KIT declarations, then
+`resolve_component_route(name, routes, device_context)` for a deterministic match.
+The React adapter accepts the same host-supplied device context through its
+`device` render option.
+
 The Python core exposes `filter_scripts(nodes, host)`:
 
 - React selects JavaScript and TypeScript.
@@ -117,9 +124,11 @@ raise an error rather than guessing. JSON is data, never executable code.
 
 ## Current boundaries
 
-The current parser stores a generic indentation tree. Native code is not yet
-captured as a byte-for-byte opaque source span, and PICKER currently selects
-parsed language nodes rather than emitting a complete portable bundle.
+The parser now preserves native-language block contents as opaque source text
+(after removing the CUDL indentation prefix), and the IR carries that source to
+PICKER. It does not yet preserve original line endings/outer indentation byte
+for byte, and PICKER selects parsed language nodes rather than emitting a
+complete portable bundle.
 Host-specific dependency discovery, package installation, native execution,
 React Native/Android/iOS rendering and automatic device detection remain host
 adapter work. The host application must provide a trusted DeviceContext and
