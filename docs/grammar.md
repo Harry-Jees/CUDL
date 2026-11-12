@@ -182,6 +182,53 @@ dependencies are actually available.
 - `->` — reserved for concise navigation/action declarations.
 - Quotes — optional for ordinary text, available for escaped or special strings.
 
+## 8. Application configuration and platform routing
+
+GUIDE and KIT configuration values always use an explicit equals sign.
+Structural declarations such as `component Navigation` and `page Home`
+remain declarations, not assignments.
+
+```cudl
+GUIDE
+    name = WelcomeApp
+    version = 1.0
+    platforms = [android, ios, web]
+    routing = device
+
+KIT
+    theme = light-brown
+        background = #F5F0E8
+        foreground = #292521
+        accent = #B98B68
+        radius = 18
+```
+
+The five top-level sections may appear in any order, but each may appear only
+once. Built-in keywords and section names are case-insensitive. The compiler
+normalizes section order in serialized application IR.
+
+Platform routing supports both global GUIDE routes and component-local KIT
+routes. A route may match a platform, device class, minimum/maximum width,
+input mode, required capabilities and priority. Component-local rules take
+precedence over global rules; a default route is the fallback.
+
+```cudl
+GUIDE
+    route = android
+        component = Navigation
+        device = phone
+        use = AndroidPhoneNavigation
+    route = default
+        component = Navigation
+        use = ResponsiveNavigation
+```
+
+PICKER selects declared native script blocks for an explicit host profile.
+React selects JavaScript/TypeScript, Python selects Python, Android selects
+Kotlin/Java, and iOS selects Swift. Portable CUDL script blocks and JSON data
+are retained. Native code is preserved as opaque source; CUDL does not execute
+it or install dependencies.
+
 Run a file with `cudl run app.cudl` to execute its supported native `script`
 blocks. Use `cudl check app.cudl` to validate indentation and syntax without
 running it.
