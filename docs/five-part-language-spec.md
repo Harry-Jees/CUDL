@@ -6,7 +6,7 @@ CUDL (Creative Unified Design Language) is an embeddable, indentation-first lang
 
 ## 1. Five-part bundle
 
-A complete application is organized into five peer sections, in canonical order:
+A complete application is organized into five peer sections, in any source order:
 
 | Section | Responsibility |
 | --- | --- |
@@ -16,7 +16,7 @@ A complete application is organized into five peer sections, in canonical order:
 | SCRIPTS | Variables, expressions, functions, application logic and host-language adapters |
 | TIME | Timelines, scenes, tracks, keyframes, scheduling, playback and temporal events |
 
-Each section appears at most once. Empty sections may be omitted. The compiler preserves section identity and lowers all sections into one versioned application IR with typed payloads.
+Each section appears at most once. Empty sections may be omitted. The compiler preserves source order in the source model and emits the serialized application IR in canonical GUIDE, KIT, PAGES, SCRIPTS, TIME order. Built-in section names and keywords are case-insensitive.
 
 ## 2. Source rules
 
@@ -131,7 +131,7 @@ KIT
 
 Component properties are explicit inputs. Adapters map components to DOM nodes, native widgets or other host representations while preserving their contracts.
 
-## 7. PAGES
+## 8. PAGES
 
 PAGES describes screens and layout trees. Business logic belongs in SCRIPTS.
 
@@ -149,7 +149,51 @@ PAGES
 
 Layout and interaction nodes lower to typed IR nodes. Unsupported essential behavior must produce diagnostics, not disappear silently.
 
-## 8. SCRIPTS
+
+## 7.1 Platform and device routing
+
+GUIDE may define a global route map, and individual KIT components may define
+their own routes. Both use explicit equals assignments:
+
+```cudl
+GUIDE
+    route = android
+        component = Navigation
+        device = phone
+        use = AndroidPhoneNavigation
+    route = default
+        component = Navigation
+        use = ResponsiveNavigation
+
+KIT
+    component Navigation
+        route = android
+            device = tablet
+            use = AndroidTabletNavigation
+        route = web
+            use = WebNavigation
+        route = default
+            use = ResponsiveNavigation
+```
+
+Component-local rules take precedence over global rules for equal matches.
+The initial route model supports platform, device class, width ranges, input
+mode, required capabilities and explicit priority. A missing match returns a
+diagnostic/result; it must not silently use an incompatible implementation.
+The host adapter supplies the device context; CUDL core does not guess or
+probe the device itself.
+
+## 7.2 PICKER host selection
+
+PICKER selects native script blocks for an explicitly declared host profile.
+React selects JavaScript/TypeScript, Python selects Python, Android selects
+Kotlin/Java, and iOS selects Swift. Portable CUDL script blocks and JSON data
+are retained for every host. Excluded native blocks are reported. Selection
+does not execute code, install dependencies, or guarantee that a runtime is
+available. Native source-preserving extraction and full bundle packaging are
+still staged.
+
+## 9. SCRIPTS
 
 SCRIPTS owns variables, functions, calculations, event handlers and calls to host capabilities.
 
@@ -170,7 +214,7 @@ SCRIPTS
 
 Host-language blocks preserve native syntax. CUDL does not execute arbitrary host code; the host adapter checks whether the language runtime and dependencies are available and permitted.
 
-## 9. TIME — portable timeline system
+## 10. TIME — portable timeline system
 
 TIME is a first-class peer of SCRIPTS, not a UI-only animation shortcut. It describes visual animation, scene sequencing, presentations, simulations, audio/visual experiences and other time-based behavior.
 
@@ -253,7 +297,7 @@ The current experimental evaluator handles deterministic numeric interpolation, 
 
 Adapters advertise capabilities (target types, easing, clock precision, audio/video, background execution and lifecycle). Missing capabilities produce diagnostics or an explicitly declared fallback; they must not silently alter timing semantics. Disposed targets cancel or detach their tracks. Untrusted timelines have configurable limits for duration, tracks, keyframes, recursion and event frequency.
 
-## 10. Unified compiler model
+## 11. Unified compiler model
 
 Pipeline:
 
@@ -267,7 +311,7 @@ Pipeline:
 
 SCRIPTS controls timelines through typed operations such as play, pause, seek and cancel. TIME calls SCRIPTS only through declared event bindings. This keeps side effects explicit and avoids circular evaluation.
 
-## 11. Complete five-part single-page specimen
+## 12. Complete five-part single-page specimen
 
 This is the target design specimen, not a claim that every construct is currently executable.
 
@@ -350,7 +394,7 @@ bundle WelcomeApp
                 @welcomeFinished
 ```
 
-## 12. Conformance and implementation status
+## 13. Conformance and implementation status
 
 This specification is the target contract, not a statement that all features exist today.
 
@@ -361,7 +405,7 @@ This specification is the target contract, not a statement that all features exi
 | Dynamic assignment and safe expressions | Required | Implemented subset |
 | Functions and returns | Required | Implemented subset |
 | Conditionals and loops | Required | Planned |
-| Five-part semantic bundle | Required | Implemented subset: wrapper/section validation and versioned application IR; deeper section semantics remain staged |
+| Five-part semantic bundle | Required | Flexible section order, mixed-case section keywords, equals validation for GUIDE/KIT and section-aware application IR; deeper section semantics remain staged |\n| Platform/device routing | Required | Initial global and component route compiler with fallback, device class, width, input and capability matching |\n| PICKER host selection | Required | Initial React/Python/Android/iOS native block filtering; no source-preserving packaging or execution |\n| Developer tooling | Required | CLI checks and diagnostics; editor language server, formatter and debugger remain planned |\n| (existing) Five-part semantic bundle | Required | wrapper/section validation and versioned application IR; deeper section semantics remain staged |
 | Timeline syntax and timeline model | Required | Experimental numeric timelines/scenes/tracks/keyframes; serialized separately from application IR |
 | Portable timeline evaluator | Required | Implemented experimental numeric subset with integer-microsecond evaluation and bounded playback modes |
 | React/native timeline adapters | Required | React renders KIT/PAGES; TIME playback adapters are not implemented |
