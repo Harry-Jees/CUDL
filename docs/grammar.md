@@ -204,7 +204,7 @@ KIT
 ```
 
 The five top-level sections may appear in any order, but each may appear only
-once. Built-in keywords and section names are case-insensitive. The compiler
+once. Built-in keywords, section names and identifier lookup are case-insensitive. The compiler
 normalizes section order in serialized application IR.
 
 Platform routing supports both global GUIDE routes and component-local KIT
