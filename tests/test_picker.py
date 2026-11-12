@@ -1,6 +1,6 @@
 from cudl.parser import parse
 from cudl.ir import lower
-from cudl.picker import filter_scripts
+from cudl.picker import filter_scripts, filter_scripts_for_hosts
 
 
 def _script_nodes(source):
@@ -80,3 +80,18 @@ def test_native_source_survives_lowering_into_ir():
     )
     ir = lower(parsed.document).to_dict()
     assert ir["nodes"][0]["children"][0]["raw_source"] == "print('hello')"
+
+
+def test_multi_host_picker_creates_independent_react_and_python_selections():
+    nodes = _script_nodes(
+        "SCRIPTS\n"
+        "    javascript\n"
+        "        const web = true\n"
+        "    python\n"
+        "        print('native')\n"
+        "    json\n"
+        "        { }\n"
+    )
+    selections = filter_scripts_for_hosts(nodes, ["react", "python"])
+    assert [node.kind for node in selections["react"].selected] == ["javascript", "json"]
+    assert [node.kind for node in selections["python"].selected] == ["python", "json"]
