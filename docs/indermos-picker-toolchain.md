@@ -234,3 +234,20 @@ host-language blocks, filter scripts by target, or produce PICKER bundles. The c
 does not implement a standalone garbage collector or full general-purpose control flow.
 Maintain this distinction in README, CLI help and release notes until each capability is
 implemented and verified.
+
+
+## Initial implementation status
+
+The Python core now exposes `analyze_project(files, entry=None)` from
+`cudl.indermos`. It inspects caller-supplied manifest text without filesystem
+access or execution. Initial recognition includes npm/package.json, Python
+requirements and pyproject manifests, Cargo, Go modules, Maven, Gradle/Android,
+Swift Package Manager, .NET project files and CMake. It extracts a bounded set
+of declared dependency names and versions, reports conflicting declarations,
+and can include the existing local CUDL module graph.
+
+This is static manifest analysis, not full dependency resolution. It does not
+query registries, calculate transitive dependency graphs, select package
+versions, install packages, execute build scripts, inspect the local machine,
+or verify that a compiler/runtime is installed. Those operations need explicit
+host tooling and approval. Unsupported manifests are not guessed.
