@@ -226,3 +226,15 @@ def merge_route_tables(
         # while an explicitly higher priority still wins.
         merged[name] = list(items) + merged.get(name, [])
     return merged
+
+
+
+def compile_application_routes(bundle) -> RouteCompileResult:
+    """Compile GUIDE global routes and KIT component routes from one bundle."""
+    sections = getattr(bundle, "sections", {})
+    guide_result = compile_global_routes(sections.get("guide", ()))
+    kit_result = compile_component_routes(sections.get("kit", ()))
+    return RouteCompileResult(
+        routes=merge_route_tables(guide_result.routes, kit_result.routes),
+        diagnostics=[*guide_result.diagnostics, *kit_result.diagnostics],
+    )
