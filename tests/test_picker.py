@@ -6,17 +6,17 @@ from cudl.cli import main
 
 def _scripts():
     source = (
-        "GUIDE\\n"
-        "    name = PickerDemo\\n"
-        "SCRIPTS\\n"
-        "    javascript\\n"
-        "        console.log('web');\\n"
-        "    python\\n"
-        "        print('python host');\\n"
-        "    json\\n"
-        "        {\"version\": 1}\\n"
-        "    kotlin\\n"
-        "        println(\"android host\")\\n"
+        "GUIDE\n"
+        "    name = PickerDemo\n"
+        "SCRIPTS\n"
+        "    javascript\n"
+        "        console.log('web');\n"
+        "    python\n"
+        "        print('python host');\n"
+        "    json\n"
+        "        {\"version\": 1}\n"
+        "    kotlin\n"
+        "        println(\"android host\")\n"
     )
     parsed = parse_bundle(source)
     assert not parsed.has_errors
@@ -64,13 +64,13 @@ def test_picker_rejects_unknown_and_duplicate_hosts():
 def test_picker_cli_reports_selected_and_excluded_blocks(tmp_path, monkeypatch, capsys):
     source = tmp_path / "picker.cudl"
     source.write_text(
-        "GUIDE\\n"
-        "    name = PickerDemo\\n"
-        "SCRIPTS\\n"
-        "    javascript\\n"
-        "        console.log('web');\\n"
-        "    python\\n"
-        "        print('python host');\\n",
+        "GUIDE\n"
+        "    name = PickerDemo\n"
+        "SCRIPTS\n"
+        "    javascript\n"
+        "        console.log('web');\n"
+        "    python\n"
+        "        print('python host');\n",
         encoding="utf-8",
     )
     monkeypatch.setattr("sys.argv", ["cudl", "picker", str(source), "--host", "react"])
@@ -87,7 +87,7 @@ def test_picker_cli_reports_selected_and_excluded_blocks(tmp_path, monkeypatch, 
 
 def test_picker_cli_fails_closed_for_unknown_host(tmp_path, monkeypatch, capsys):
     source = tmp_path / "picker.cudl"
-    source.write_text("SCRIPTS\\n    javascript\\n        console.log('x');\\n", encoding="utf-8")
+    source.write_text("SCRIPTS\n    javascript\n        console.log('x');\n", encoding="utf-8")
     monkeypatch.setattr("sys.argv", ["cudl", "picker", str(source), "--host", "unknown-host"])
 
     assert main() == 2
