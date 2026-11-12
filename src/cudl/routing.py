@@ -186,6 +186,7 @@ def compile_global_routes(nodes: Iterable[Node]) -> RouteCompileResult:
     Global routes are useful for routing several components from one place.
     Component-local routes can override them through merge_route_tables().
     """
+    result = RouteCompileResult()
     synthetic: list[Node] = []
     for route_node in nodes:
         if route_node.kind.casefold() != "route":
@@ -215,7 +216,10 @@ def compile_global_routes(nodes: Iterable[Node]) -> RouteCompileResult:
             )],
             line=route_node.line,
         ))
-    return compile_component_routes(synthetic)
+    compiled = compile_component_routes(synthetic)
+    result.routes = compiled.routes
+    result.diagnostics.extend(compiled.diagnostics)
+    return result
 
 
 def merge_route_tables(
