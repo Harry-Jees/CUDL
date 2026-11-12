@@ -230,6 +230,7 @@ function selectRouteImplementation(
       if (route.name.toLowerCase() !== "route") continue;
       const platform = (assignmentValue(route) ?? "").toLowerCase();
       const globalComponent = childAssignment(route, "component");
+      if (local === 0 && !globalComponent) continue;
       if (globalComponent && globalComponent.toLowerCase() !== componentName.toLowerCase()) continue;
       if (!platform) continue;
       const routeDevice = (childAssignment(route, "device") ?? "any").toLowerCase();
@@ -271,7 +272,7 @@ function selectRouteImplementation(
         widthSpecificity: minRaw !== undefined || maxRaw !== undefined ? 1 : 0,
         inputSpecificity: input ? 1 : 0,
         capabilitySpecificity: required.length,
-        priority: priority + (local ? 0 : 0),
+        priority,
         local,
         order,
       });
