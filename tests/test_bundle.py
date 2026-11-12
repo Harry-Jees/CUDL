@@ -141,7 +141,7 @@ def test_requires_equals_for_guide_and_kit_configuration():
         "GUIDE\n"
         "    name App\n"
         "KIT\n"
-        "    theme = warm\\n"
+        "    theme = warm\n"
         "        background #ffffff\n"
     )
     assert result.has_errors
