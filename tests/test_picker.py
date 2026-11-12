@@ -1,4 +1,5 @@
 from cudl.parser import parse
+from cudl.ir import lower
 from cudl.picker import filter_scripts
 
 
@@ -69,3 +70,13 @@ def test_native_blocks_preserve_source_without_parsing_host_syntax():
     assert nodes[0].raw_source == "def greeting():\n    return 'hello'"
     assert nodes[1].raw_source == "export const greeting = () => 'hello';"
     assert nodes[0].children == []
+
+
+def test_native_source_survives_lowering_into_ir():
+    parsed = parse(
+        "SCRIPTS\n"
+        "    python\n"
+        "        print('hello')\n"
+    )
+    ir = lower(parsed.document).to_dict()
+    assert ir["nodes"][0]["children"][0]["raw_source"] == "print('hello')"
