@@ -1,4 +1,4 @@
-from cudl import lower_bundle, parse_bundle
+from pathlib import Path\n\nfrom cudl import compile_component_routes, lower_bundle, parse_bundle
 
 
 def test_parses_all_five_sections_inside_named_bundle():
@@ -96,3 +96,14 @@ def test_reports_multiple_bundle_wrappers_without_crashing():
     )
     assert result.has_errors
     assert any(item.code == "CUDL2001" for item in result.diagnostics)
+
+
+
+def test_react_python_device_routing_example_is_a_valid_five_part_bundle():
+    source = Path("examples/hello-react-python.cudl").read_text(encoding="utf-8")
+    result = parse_bundle(source, source="examples/hello-react-python.cudl")
+    assert not result.has_errors
+    assert set(result.bundle.sections) == {"guide", "kit", "pages", "scripts", "time"}
+    routes = compile_component_routes(result.bundle.sections["kit"])
+    assert not routes.diagnostics
+    assert {"navigation"} == set(routes.routes)
