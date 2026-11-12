@@ -52,8 +52,8 @@ CUDL's planned host-integration toolchain has two cooperating services:
   bundle.
 
 They are toolchain services, not extra language sections or source keywords.
-INDERMOS supplies the resolved host profile and dependency plan; PICKER uses
-those results to filter and package content. Their architecture, proposed APIs,
+INDERMOS supplies a read-only host/dependency report; PICKER uses an explicit
+host profile to filter native script blocks. Full packaging remains planned. Their architecture, proposed APIs,
 safety boundaries and implementation stages are specified in
 [`docs/indermos-picker-toolchain.md`](docs/indermos-picker-toolchain.md).
 
@@ -96,6 +96,7 @@ cudl check examples/hello.cudl
 cudl parse examples/hello.cudl
 cudl run examples/hello.cudl
 cudl bundle examples/five-part-welcome.cudl
+cudl analyze .
 pytest
 ```
 
