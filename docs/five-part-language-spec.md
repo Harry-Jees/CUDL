@@ -22,7 +22,7 @@ Each section appears at most once. Empty sections may be omitted. The compiler p
 
 - Four spaces are the canonical indentation unit; indentation defines blocks.
 - No mandatory braces, semicolons, block-closing keywords or colons.
-- Keywords are case-insensitive; user-defined names preserve spelling.
+- Built-in keywords, section names and identifier lookup are case-insensitive.
 - Blank lines are insignificant.
 - Ordinary text can be unquoted; quotes remain available for escaping or special characters.
 - `#` introduces variable declarations/references; `##` introduces comments.
