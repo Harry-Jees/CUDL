@@ -48,16 +48,27 @@ def test_rejects_duplicate_sections():
     assert any(item.code == "CUDL2004" for item in result.diagnostics)
 
 
-def test_rejects_sections_outside_canonical_order():
+def test_allows_sections_in_any_order_and_normalizes_ir_order():
     result = parse_bundle(
-        "PAGES\n"
+        "pAgEs\n"
         "    page Home\n"
-        "GUIDE\n"
-        "    name App\n"
+        "gUiDe\n"
+        "    name = App\n"
+        "sCrIpTs\n"
+        "    #ready = true\n"
+        "kIt\n"
+        "    theme = warm\n"
+        "tImE\n"
+        "    timeline Intro\n"
+        "        duration 1s\n"
     )
 
-    assert result.has_errors
-    assert any(item.code == "CUDL2005" for item in result.diagnostics)
+    assert not result.has_errors
+    assert tuple(result.bundle.sections) == ("pages", "guide", "scripts", "kit", "time")
+    assert tuple(lower_bundle(result.bundle).sections) == ("pages", "guide", "scripts", "kit", "time")
+    assert list(lower_bundle(result.bundle).to_dict()["sections"]) == [
+        "guide", "kit", "pages", "scripts", "time"
+    ]
 
 
 def test_rejects_unknown_top_level_statements():
