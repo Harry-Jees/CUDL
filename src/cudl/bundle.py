@@ -1,8 +1,8 @@
 """Five-part application bundle parsing and lowering.
 
-The generic parser remains backward-compatible. This module adds the
-application-level contract: an optional `bundle Name` wrapper containing
-GUIDE, KIT, PAGES, SCRIPTS and TIME peer sections in canonical order.
+Sections are peer blocks: they may appear in any source order, while the
+serialized application IR always uses the canonical GUIDE/KIT/PAGES/SCRIPTS/TIME
+order. Each section may appear at most once.
 """
 from __future__ import annotations
 
@@ -73,7 +73,7 @@ class ApplicationIR:
 
 
 def parse_bundle(source_text: str, source: str | None = None) -> BundleParseResult:
-    """Parse and validate an application bundle without changing legacy parse()."""
+    """Parse a single-file application; section order is deliberately flexible."""
     parsed = parse(source_text, source=source)
     diagnostics = list(parsed.diagnostics)
     roots = list(parsed.document.nodes)
@@ -107,7 +107,6 @@ def parse_bundle(source_text: str, source: str | None = None) -> BundleParseResu
         roots = list(wrapper.children)
 
     sections: dict[str, list[Node]] = {}
-    seen_order: list[tuple[str, int]] = []
     for node in roots:
         section_name = node.kind.casefold()
         if section_name not in _SECTION_SET:
@@ -131,22 +130,6 @@ def parse_bundle(source_text: str, source: str | None = None) -> BundleParseResu
             ))
             continue
         sections[section_name] = list(node.children)
-        seen_order.append((section_name, node.line))
-
-    positions = {name: index for index, name in enumerate(SECTION_ORDER)}
-    previous = -1
-    for name, line in seen_order:
-        current = positions[name]
-        if current < previous:
-            diagnostics.append(Diagnostic(
-                code="CUDL2005",
-                message=f"The {name.upper()} section is out of canonical order.",
-                severity=Severity.ERROR,
-                line=line,
-                source=source,
-                suggestion="Order sections as GUIDE, KIT, PAGES, SCRIPTS, TIME.",
-            ))
-        previous = max(previous, current)
 
     if not sections:
         diagnostics.append(Diagnostic(
