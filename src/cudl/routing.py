@@ -196,6 +196,9 @@ def compile_global_routes(nodes: Iterable[Node]) -> RouteCompileResult:
             None,
         )
         if not component:
+            result.diagnostics.append(
+                f"CUDL5004 line {route_node.line}: GUIDE global route requires 'component = ComponentName'."
+            )
             continue
         route_children = [
             child for child in route_node.children
