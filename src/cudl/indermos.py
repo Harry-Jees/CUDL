@@ -119,11 +119,9 @@ def _requirements(path: str, content: str, deps: list[DeclaredDependency]) -> No
         line = raw.strip()
         if not line or line.startswith(("#", "-")):
             continue
-        match = re.match(r"([A-Za-z0-9_.-]+)(?:\[[^]]+\])?\s*(?:==|~=|>=|<=|>|<|!=)\s*([^;\s]+)", line)
-        name = match.group(1) if match else re.match(r"([A-Za-z0-9_.-]+)", line)
-        if name:
-            version = match.group(2) if match else None
-            deps.append(DeclaredDependency("pypi", name.group(1), version, path))
+        match = re.match(r"([A-Za-z0-9_.-]+)(?:\[[^]]+\])?\s*(?:(?:==|~=|>=|<=|>|<|!=)\s*([^;\s]+))?", line)
+        if match:
+            deps.append(DeclaredDependency("pypi", match.group(1), match.group(2), path))
 
 
 def _toml_like_dependencies(path: str, content: str, ecosystem: str, deps: list[DeclaredDependency]) -> None:
