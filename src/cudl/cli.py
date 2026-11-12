@@ -45,10 +45,19 @@ def main() -> int:
         if not args.project.is_dir():
             print(f"error: project directory does not exist: {args.project}", file=sys.stderr)
             return 2
+        manifests = {
+            "package.json", "pyproject.toml", "requirements.txt", "cargo.toml",
+            "go.mod", "pom.xml", "build.gradle", "build.gradle.kts",
+            "androidmanifest.xml", "package.swift", "cmakelists.txt",
+        }
         sources = {
             path.relative_to(args.project).as_posix(): path.read_text(encoding="utf-8")
-            for path in sorted(args.project.rglob("*.cudl"))
-            if path.is_file()
+            for path in sorted(args.project.rglob("*"))
+            if path.is_file() and (
+                path.suffix.casefold() == ".cudl"
+                or path.name.casefold() in manifests
+                or path.suffix.casefold() == ".csproj"
+            )
         }
         if args.command == "graph":
             graph = resolve_project(sources, args.entry)
