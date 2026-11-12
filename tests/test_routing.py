@@ -90,3 +90,20 @@ def test_route_resolution_is_case_insensitive_for_keywords_and_names():
     )
     resolution = resolve_component_route("navigation", result.routes, DeviceContext("ANDROID", "PHONE"))
     assert resolution.implementation == "MobileNavigation"
+
+
+
+def test_reports_ambiguous_equal_specificity_routes_instead_of_using_source_order():
+    result = _routes(
+        "KIT\n"
+        "    component Panel\n"
+        "        route = android\n"
+        "            device = tablet\n"
+        "            use = TabletPanelA\n"
+        "        route = android\n"
+        "            device = tablet\n"
+        "            use = TabletPanelB\n"
+    )
+    resolution = resolve_component_route("Panel", result.routes, DeviceContext("android", "tablet"))
+    assert resolution.implementation is None
+    assert "ambiguous" in resolution.reason
