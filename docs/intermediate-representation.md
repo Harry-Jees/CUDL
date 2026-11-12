@@ -15,7 +15,8 @@ consume the same IR rather than implementing independent CUDL parsers.
 - The root object has `type: "CUDLIR"`, a numeric `version`, optional source
   path, and ordered `nodes`.
 - Each node contains normalized `kind` and `name`, original argument
-  `value`, semantic `category`, source line, and ordered children.
+  `value`, semantic `category`, source line, optional opaque `raw_source` for
+  native-language blocks, and ordered children.
 - Categories currently include `layout`, `element`, `declaration`,
   `component`, and `generic`.
 - Unknown node names are preserved as generic nodes. This is intentional:
