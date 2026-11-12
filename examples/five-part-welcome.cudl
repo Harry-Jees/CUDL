@@ -1,17 +1,17 @@
 bundle MotionCard
     GUIDE
-        name MotionCard
-        version 0.1
-        target universal
-        theme calm
-        time-unit ms
+        name = MotionCard
+        version = 0.1
+        target = universal
+        theme = calm
+        time-unit = ms
 
     KIT
-        theme calm
-            background #F5F0E8
-            foreground #292521
-            accent #B98B68
-            radius 18
+        theme = calm
+            background = #F5F0E8
+            foreground = #292521
+            accent = #B98B68
+            radius = 18
 
         component WelcomeCard
             property heading

@@ -8,7 +8,7 @@ def test_bundle_command_emits_application_and_time_ir(tmp_path, monkeypatch, cap
     source.write_text(
         "bundle Demo\n"
         "    GUIDE\n"
-        "        name Demo\n"
+        "        name = Demo\n"
         "    PAGES\n"
         "        page Home\n"
         "    TIME\n"
@@ -35,7 +35,7 @@ def test_bundle_command_reports_invalid_time(tmp_path, monkeypatch, capsys):
     source = tmp_path / "invalid.cudl"
     source.write_text(
         "GUIDE\n"
-        "    name Demo\n"
+        "    name = Demo\n"
         "TIME\n"
         "    timeline Intro\n"
         "        duration 1000\n",

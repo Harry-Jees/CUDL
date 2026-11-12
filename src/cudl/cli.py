@@ -14,6 +14,7 @@ from .runtime import CUDLRuntimeError, run_script
 from .bundle import lower_bundle, parse_bundle
 from .time import compile_time
 from .routing import DeviceContext, compile_component_routes, resolve_component_route
+from .picker import filter_scripts
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -38,6 +39,10 @@ def _parser() -> argparse.ArgumentParser:
     routes.add_argument("--width", type=int)
     routes.add_argument("--input", dest="input_mode")
     routes.add_argument("--capability", action="append", default=[])
+    picker = commands.add_parser("picker", help="Preview native script blocks selected for a host.")
+    picker.add_argument("file", type=Path)
+    picker.add_argument("--host", required=True, help="Declared host profile, such as react, python, android, or ios.")
+    picker.add_argument("--extra-language", action="append", default=[], help="Additional native language supported by the host; may be repeated.")
     graph = commands.add_parser("graph", help="Resolve project imports and print the module graph.")
     graph.add_argument("project", type=Path)
     graph.add_argument("entry", help="Entry module path relative to the project root.")
@@ -64,6 +69,25 @@ def main() -> int:
     except OSError as exc:
         print(f"error: cannot read {args.file}: {exc}", file=sys.stderr)
         return 2
+
+    if args.command == "picker":
+        result = parse_bundle(source, source=str(args.file))
+        for diagnostic in result.diagnostics:
+            location = f"{diagnostic.source or '<input>'}:{diagnostic.line}:{diagnostic.column}"
+            print(f"{location}: {diagnostic.severity.value} {diagnostic.code}: {diagnostic.message}", file=sys.stderr)
+            if diagnostic.suggestion:
+                print(f"  suggestion: {diagnostic.suggestion}", file=sys.stderr)
+        if result.has_errors:
+            return 1
+        try:
+            selection = filter_scripts(
+                result.bundle.sections.get("scripts", []), args.host, args.extra_language
+            )
+        except ValueError as exc:
+            print(f"{args.file}: error CUDL7001: {exc}", file=sys.stderr)
+            return 2
+        print(json.dumps(selection.to_dict(), indent=2))
+        return 0
 
     if args.command == "routes":
         result = parse_bundle(source, source=str(args.file))

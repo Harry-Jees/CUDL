@@ -9,6 +9,7 @@ from .lexer import LexError, Token, TokenKind, tokenize
 from .ir import IRDocument, IRNode, lower
 from .modules import ImportBinding, ImportSpec, ModuleGraph, parse_import, resolve_project
 from .parser import Document, Node, ParseResult, parse
+from .picker import PickerSelection, filter_scripts, filter_scripts_for_hosts, host_languages
 from .routing import (
     ComponentRoute, DeviceContext, RouteCompileResult, RouteResolution,
     compile_component_routes, resolve_component_route,
@@ -25,7 +26,8 @@ __all__ = [
     "Document", "LexError", "IRDocument", "IRNode", "ImportBinding",
     "ImportSpec", "ModuleGraph", "Node", "ParseResult", "Severity", "Token",
     "TokenKind", "lower", "parse", "parse_import", "resolve_project",
-    "tokenize", "ComponentRoute", "DeviceContext", "RouteCompileResult",
+    "tokenize", "PickerSelection", "filter_scripts", "filter_scripts_for_hosts", "host_languages",
+    "ComponentRoute", "DeviceContext", "RouteCompileResult",
     "RouteResolution", "compile_component_routes", "resolve_component_route",
 ]
 
