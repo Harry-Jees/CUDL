@@ -21,6 +21,8 @@ _LANGUAGE_ALIASES = {
 _HOST_LANGUAGES = {
     "react": frozenset({"javascript", "typescript"}),
     "react-native": frozenset({"javascript", "typescript"}),
+    "web": frozenset({"javascript", "typescript"}),
+    "node": frozenset({"javascript", "typescript"}),
     "python": frozenset({"python"}),
     "android": frozenset({"kotlin", "java"}),
     "ios": frozenset({"swift"}),
@@ -87,3 +89,21 @@ def filter_scripts(
         else:
             excluded.append((node.kind.casefold(), node.line))
     return PickerSelection(host.casefold(), tuple(selected), tuple(excluded))
+
+
+
+def filter_scripts_for_hosts(
+    nodes: Iterable[Node],
+    hosts: Iterable[str],
+    extra_languages: dict[str, Iterable[str]] | None = None,
+) -> dict[str, PickerSelection]:
+    """Return an independent deterministic selection for each declared host."""
+    source_nodes = tuple(nodes)
+    extras = extra_languages or {}
+    result: dict[str, PickerSelection] = {}
+    for host in hosts:
+        key = host.strip().casefold()
+        if key in result:
+            raise ValueError(f"Duplicate CUDL host target: {host!r}")
+        result[key] = filter_scripts(source_nodes, key, extras.get(key, ()))
+    return result
