@@ -11,7 +11,7 @@ import posixpath
 import re
 from typing import Mapping
 
-from .modules import ModuleGraph, resolve_project
+from .modules import resolve_project
 
 
 @dataclass(frozen=True, slots=True)
@@ -132,20 +132,42 @@ def _requirements(path: str, content: str, deps: list[DeclaredDependency]) -> No
 
 def _toml_like_dependencies(path: str, content: str, ecosystem: str, deps: list[DeclaredDependency]) -> None:
     section: str | None = None
-    for raw in content.splitlines():
-        line = raw.strip()
+    lines = content.splitlines()
+    index = 0
+    while index < len(lines):
+        line = lines[index].strip()
         header = re.match(r"\[([^]]+)\]", line)
         if header:
             section = header.group(1).casefold()
+            index += 1
             continue
-        if ecosystem == "pypi" and section not in {"project.dependencies", "tool.poetry.dependencies", "dependency-groups.dev"}:
+        if ecosystem == "pypi" and section == "project" and re.match(r"dependencies\s*=\s*\[", line):
+            array_lines = [line]
+            while "]" not in array_lines[-1] and index + 1 < len(lines):
+                index += 1
+                array_lines.append(lines[index])
+            for requirement in re.findall(r'"([^"]+)"', "\n".join(array_lines)):
+                match = re.match(r"([A-Za-z0-9_.-]+)(?:\[[^]]+\])?\s*(?:(?:==|~=|>=|<=|>|<|!=)\s*([^;\s]+))?", requirement)
+                if match:
+                    deps.append(DeclaredDependency(ecosystem, match.group(1), match.group(2), path))
+            index += 1
             continue
-        if ecosystem == "cargo" and not (section == "dependencies" or (section or "").startswith("target.") and section.endswith(".dependencies")):
+        if ecosystem == "pypi" and section not in {"tool.poetry.dependencies", "dependency-groups.dev"}:
+            index += 1
             continue
-        match = re.match(r'([A-Za-z0-9_.-]+)\s*=\s*(?:"([^"]+)"|\{[^}]*version\s*=\s*"([^"]+)"[^}]*\})', line)
-        if match:
+        if ecosystem == "cargo" and not (
+            section == "dependencies"
+            or ((section or "").startswith("target.") and (section or "").endswith(".dependencies"))
+        ):
+            index += 1
+            continue
+        match = re.match(
+            r'([A-Za-z0-9_.-]+)\s*=\s*(?:"([^"]+)"|\{[^}]*version\s*=\s*"([^"]+)"[^}]*\})',
+            line,
+        )
+        if match and not (ecosystem == "pypi" and match.group(1).casefold() == "python"):
             deps.append(DeclaredDependency(ecosystem, match.group(1), match.group(2) or match.group(3), path))
-
+        index += 1
 
 def _go_dependencies(path: str, content: str, deps: list[DeclaredDependency]) -> None:
     for raw in content.splitlines():
@@ -214,10 +236,26 @@ def analyze_project(files: Mapping[str, str], entry: str | None = None) -> Stack
             _add_stack(found, HostStack("android", "kotlin/java", path, ("AndroidManifest.xml",), 0.98))
         elif name == "package.swift":
             _add_stack(found, HostStack("swift", "swift", path, ("Package.swift",), 0.95))
+            for match in re.finditer(r'\.package\([^)]*url\s*:\s*"([^"]+)"[^)]*from\s*:\s*"([^"]+)"', content):
+                package_name = match.group(1).rstrip("/").rsplit("/", 1)[-1].removesuffix(".git")
+                dependencies.append(DeclaredDependency("swiftpm", package_name, match.group(2), path))
         elif name.endswith(".csproj"):
             _add_stack(found, HostStack("dotnet", "csharp", path, ("C# project file",), 0.95))
+            import xml.etree.ElementTree as ET
+            try:
+                root = ET.fromstring(content)
+                for item in root.iter():
+                    if item.tag.split("}")[-1] == "PackageReference":
+                        package_name = item.attrib.get("Include") or item.attrib.get("Update")
+                        version = item.attrib.get("Version")
+                        if package_name:
+                            dependencies.append(DeclaredDependency("nuget", package_name, version, path))
+            except ET.ParseError:
+                warnings.append(f"{path}: invalid XML project file.")
         elif name == "cmakelists.txt":
             _add_stack(found, HostStack("cmake", "c/c++", path, ("CMakeLists.txt",), 0.8))
+            for match in re.finditer(r"find_package\s*\(\s*([A-Za-z0-9_.+-]+)(?:\s+([0-9][^\s)]+))?", content, re.IGNORECASE):
+                dependencies.append(DeclaredDependency("cmake", match.group(1), match.group(2), path))
         elif name.endswith(".cudl"):
             from .bundle import parse_bundle
             parsed = parse_bundle(content, source=path)
