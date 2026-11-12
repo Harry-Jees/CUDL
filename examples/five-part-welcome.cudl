@@ -1,38 +1,77 @@
-bundle MotionCard
+bundle WelcomeApp
     GUIDE
-        name MotionCard
-        version 0.1
-        target universal
-        theme calm
-        time-unit ms
+        name = WelcomeApp
+        version = 1.0
+        targets = [react, python]
+        platforms = [android, ios, web, windows, macos, linux]
+        routing = device
+        time-unit = ms
+
+        route = android
+            component = Navigation
+            device = phone
+            use = AndroidPhoneNavigation
+
+        route = default
+            component = Navigation
+            use = ResponsiveNavigation
 
     KIT
-        theme calm
-            background #F5F0E8
-            foreground #292521
-            accent #B98B68
-            radius 18
+        theme = light-brown
+            background = #F5F0E8
+            foreground = #292521
+            accent = #B98B68
+            radius = 18
+
+        component Navigation
+            route = android
+                device = phone
+                use = AndroidPhoneNavigation
+            route = android
+                device = tablet
+                use = AndroidTabletNavigation
+            route = web
+                use = WebNavigation
+            route = default
+                use = ResponsiveNavigation
 
         component WelcomeCard
             property heading
+            property subtitle optional
             card
                 title heading
+                text subtitle
 
     PAGES
         page Home
             center
                 @WelcomeCard
                     heading = Welcome to CUDL
-                text A portable five-part application bundle
-                button Continue
+                    subtitle = One source, multiple host targets
+                text A little room to breathe
+                button Get Started
                     on click @start
 
     SCRIPTS
         #started = false
+        #theme = light
 
         @start
             #started = true
             print Welcome started
+
+        javascript
+            export const greeting = "Hello from React";
+
+        python
+            def greeting():
+                return "Hello from Python"
+
+        json
+            {
+                "name": "WelcomeApp",
+                "theme": "light-brown"
+            }
 
     TIME
         timeline WelcomeIntro
@@ -49,7 +88,7 @@ bundle MotionCard
                     duration 800ms
                     ease out-cubic
 
-                track Home.Continue.scale
+                track Home.GetStarted.scale
                     from 0.96
                     to 1
                     start 250ms
