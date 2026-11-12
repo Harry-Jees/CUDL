@@ -45,3 +45,26 @@ def test_bundle_command_reports_invalid_time(tmp_path, monkeypatch, capsys):
 
     assert main() == 1
     assert "CUDL3002" in capsys.readouterr().err
+
+
+
+def test_routes_command_selects_android_phone_implementation(tmp_path, monkeypatch, capsys):
+    source = tmp_path / "app.cudl"
+    source.write_text(
+        "KIT\n"
+        "    component Navigation\n"
+        "        route = android\n"
+        "            device = phone\n"
+        "            use = AndroidPhoneNavigation\n"
+        "        route = default\n"
+        "            use = ResponsiveNavigation\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        ["cudl", "routes", str(source), "--component", "Navigation",
+         "--platform", "android", "--device", "phone"],
+    )
+    assert main() == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["implementation"] == "AndroidPhoneNavigation"

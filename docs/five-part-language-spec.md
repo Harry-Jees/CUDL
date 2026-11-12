@@ -1,32 +1,39 @@
 # CUDL five-part language specification
 
-Status: canonical design direction; the five-part bundle validator and initial numeric TIME evaluator are implemented on the development branch. Full TIME events, host rendering, capability negotiation and cross-platform adapters remain staged.
+Status: canonical design direction. The bundle validator, reference runtime,
+component registry and experimental numeric TIME evaluator are implemented in
+the development branch. Full platform adapters, native-block routing and
+capability negotiation remain staged.
 
-CUDL (Creative Unified Design Language) is an embeddable, indentation-first language for describing application configuration, reusable UI, pages, program logic, and time-based experiences. CUDL does not replace the host application's runtime or lifecycle.
+CUDL (Creative Unified Design Language) is an embeddable, indentation-first
+language for application manifests, reusable UI, pages, program logic and
+time-based experiences. The host application retains its runtime and lifecycle.
 
-## 1. Five-part bundle
+## 1. Five-part application file
 
-A complete application is organized into five peer sections, in canonical order:
+A single `.cudl` file may contain all five peer sections. They may appear in
+any order, each at most once. Empty sections may be omitted. The compiler
+normalizes them to GUIDE, KIT, PAGES, SCRIPTS, TIME in the application IR.
 
 | Section | Responsibility |
 | --- | --- |
-| GUIDE | Metadata, targets, dependencies, global settings, tokens and conventions |
-| KIT | Reusable components, themes, styles, widgets and component contracts |
+| GUIDE | Application identity, target platforms, host requirements and global routing policy |
+| KIT | Reusable components, themes, tokens, styles, component contracts and component routes |
 | PAGES | Screens, layout, content, navigation and interaction declarations |
-| SCRIPTS | Variables, expressions, functions, application logic and host-language adapters |
-| TIME | Timelines, scenes, tracks, keyframes, scheduling, playback and temporal events |
-
-Each section appears at most once. Empty sections may be omitted. The compiler preserves section identity and lowers all sections into one versioned application IR with typed payloads.
+| SCRIPTS | Variables, expressions, functions, application logic and native host-language blocks |
+| TIME | Timelines, scenes, tracks, keyframes, playback and temporal events |
 
 ## 2. Source rules
 
-- Four spaces are the canonical indentation unit; indentation defines blocks.
-- No mandatory braces, semicolons, block-closing keywords or colons.
-- Keywords are case-insensitive; user-defined names preserve spelling.
+- Four spaces are the canonical indentation unit.
+- Indentation defines blocks; no mandatory braces, semicolons or block closers.
+- Built-in keywords and section names are case-insensitive.
+- User-defined names preserve spelling; symbol lookup is case-insensitive.
 - Blank lines are insignificant.
-- Ordinary text can be unquoted; quotes remain available for escaping or special characters.
-- `#` introduces variable declarations/references; `##` introduces comments.
-- Source locations are preserved for diagnostics.
+- Ordinary text is unquoted unless escaping or special characters require quotes.
+- `#` introduces variables/references; `##` introduces comments.
+- Assignments consistently use `name = value`.
+- Source locations are retained for diagnostics.
 
 ## 3. Values, variables and operators
 
@@ -38,15 +45,12 @@ Each section appears at most once. Empty sections may be omitted. The compiler p
 #profile = {name: Harry, age: 21}
 #first = #items[0]
 #displayName = #profile[name]
-
 #total = 100 + 50
-#discount = #total * 0.1
-#final = #total - #discount
 ```
 
-Values are dynamically typed; reassignment may change type. `true`, `false`, and `null` are typed literals. `const #name = value` declares a non-reassignable binding. Indexing must be bounds-checked and must not expose arbitrary host-object reflection.
-
-Core operators:
+Values are dynamically typed. Reassignment may change type. `true`, `false`
+and `null` are typed literals. `const #name = value` declares an immutable
+binding. Indexing is bounds-checked and cannot access arbitrary host objects.
 
 | Purpose | Operators |
 | --- | --- |
@@ -57,322 +61,160 @@ Core operators:
 | Grouping | `(` and `)` inside expressions |
 | Access | `#path[index]`, dotted hash paths |
 
-Precedence: grouping/indexing; unary; multiplication/division/remainder; addition/subtraction; comparisons; `not`; `and`; `or`. Mixed-type operations require explicit documented conversion rules; unsupported combinations produce diagnostics.
+## 4. GUIDE — application manifest
 
-## 4. Comments, functions and control flow
-
-```cudl
-## A comment
-#name = Harry ## inline comment
-
-@greet #person
-    print Hello #person
-
-@add #left #right
-    return #left + #right
-
-#sum = @add 20 22
-@greet Harry
-```
-
-An at-prefixed declaration owns an indented body; a call does not. In design context, `@ComponentName` references a reusable component. The parser resolves this by grammar context, not capitalization guesses.
-
-Intended control-flow syntax:
-
-```cudl
-if #score >= 50
-    print Passed
-else
-    print Try again
-
-for #item in #items
-    print #item
-```
-
-Conditionals and loops are target language features, not claims about current runtime support. Add parser/runtime implementation and tests before advertising them as executable.
-
-## 5. GUIDE
-
-GUIDE declares project metadata and environment requirements, not page markup or executable logic.
+GUIDE is intentionally small. It answers what the application is, which
+platforms it targets, which host capabilities it expects and how default
+routing behaves. It is not a generic settings section and contains no page
+markup, design tokens or business logic.
 
 ```cudl
 GUIDE
-    name WelcomeApp
-    version 1.0
-    target universal
-    theme soft
-    time-unit ms
-    platform web optional
-    platform android optional
-    platform desktop optional
+    name = HelloApp
+    version = 1.0
+    targets = [android, ios, web, windows, macos, linux]
+    routing = automatic
+    default-device = responsive
 ```
 
-A target does not guarantee adapter availability. Dependency resolution belongs to the host/build integration. Never place secrets in source-controlled configuration.
+A declared target does not guarantee an adapter is installed. INDERMOS
+inspects host manifests and resolves declared dependencies; it must not
+silently install packages. Secrets never belong in source-controlled GUIDE.
 
-## 6. KIT
+## 5. KIT — design system and component routing
 
-KIT defines reusable components, themes, tokens, styles and widgets.
+KIT owns themes, tokens, styles, reusable component contracts and their
+platform-specific implementations.
 
 ```cudl
 KIT
-    theme soft
-        background #F5F0E8
-        foreground #292521
-        accent #B98B68
-        radius 18
+    theme = light-brown
+        background = #F5F0E8
+        foreground = #292521
+        accent = #B98B68
+        radius = 18
 
-    component WelcomeCard
-        property heading
-        property subtitle optional
-        card
-            title heading
-            text subtitle
+    component Navigation
+        property active
+        route = android
+            device = phone
+            use = AndroidPhoneNavigation
+        route = android
+            device = tablet
+            use = AndroidTabletNavigation
+        route = web
+            use = WebNavigation
+        route = default
+            use = ResponsiveNavigation
 ```
 
-Component properties are explicit inputs. Adapters map components to DOM nodes, native widgets or other host representations while preserving their contracts.
+A route names a platform; nested assignments constrain the match and identify
+the implementation. Supported constraints are:
 
-## 7. PAGES
+- `device`: `phone`, `tablet`, `desktop`, `tv`, `watch` or `any`.
+- `min-width` and `max-width`: logical viewport width in CSS-independent
+  logical pixels, supplied by the adapter.
+- `input`: an input mode such as `touch`, `pointer`, `keyboard` or `stylus`.
+- `requires`: comma-separated adapter capabilities.
+- `priority`: non-negative tie-breaker after route specificity.
+- `use`: required implementation component name.
 
-PAGES describes screens and layout trees. Business logic belongs in SCRIPTS.
+A route is compatible only when platform, device, viewport, input and
+capability constraints match. Selection order is: exact platform before
+fallback; then exact device, bounded viewport/input constraints, capability
+specificity and priority. Equal-specificity collisions must be diagnosed
+rather than depending on source order. A `default` route is the fallback.
+If no compatible route or fallback exists, the adapter reports an error.
+
+GUIDE `routing = automatic` asks the host adapter to provide device context.
+Component-specific KIT routes override global responsive defaults. Platform
+and device class are independent: an Android tablet is platform Android and
+device class tablet. A large phone does not become a desktop merely because
+its viewport is wide.
+
+The initial Python routing selector is a pure planning function: it selects a
+declared implementation but does not import, execute or render it. Adapter
+capability discovery and global route inheritance remain staged.
+
+## 6. PAGES
+
+PAGES declares screens, layout and interaction bindings.
 
 ```cudl
 PAGES
     page Home
-        background soft.background
+        background = light-brown.background
         center
             @WelcomeCard
-                heading Welcome, Harry
-                subtitle A little room to breathe
+                heading = Welcome, Harry
+                subtitle = A little room to breathe
             button Get Started
                 on click @start
 ```
 
-Layout and interaction nodes lower to typed IR nodes. Unsupported essential behavior must produce diagnostics, not disappear silently.
+## 7. SCRIPTS and native blocks
 
-## 8. SCRIPTS
-
-SCRIPTS owns variables, functions, calculations, event handlers and calls to host capabilities.
+SCRIPTS owns dynamic values, functions, expressions, event handlers and
+explicit host capability calls.
 
 ```cudl
 SCRIPTS
     #started = false
-    #price = 100
-    #tax = 18
-    #total = #price + #tax
 
     @start
         #started = true
-        print Application started
 
     python
-        print("Executed only by a configured Python host")
+        print("Only selected for a configured Python host")
+
+    javascript
+        console.log("Only selected for a compatible JavaScript host")
 ```
 
-Host-language blocks preserve native syntax. CUDL does not execute arbitrary host code; the host adapter checks whether the language runtime and dependencies are available and permitted.
+Native source blocks are opaque to the CUDL runtime and must preserve their
+source text. PICKER selects only blocks compatible with the selected host.
+CUDL itself does not run arbitrary Python, JavaScript, Java, C or C++ code.
+JSON blocks, when implemented, are validated structured data, never scripts.
 
-## 9. TIME — portable timeline system
+## 8. TIME
 
-TIME is a first-class peer of SCRIPTS, not a UI-only animation shortcut. It describes visual animation, scene sequencing, presentations, simulations, audio/visual experiences and other time-based behavior.
+TIME describes timelines, scenes, tracks, keyframes, easing, playback and
+temporal events. The current experimental evaluator supports numeric tracks,
+integer-microsecond evaluation and bounded playback modes. Host frame delivery,
+event dispatch, colors, transforms, wall-clock scheduling and cross-platform
+playback adapters remain staged.
 
-Core concepts:
+## 9. Compiler and toolchain
 
-- **Timeline:** named time domain and playback plan.
-- **Scene:** named interval/phase; scenes may be sequential or overlap explicitly.
-- **Track:** independently evaluated channel targeting a property, signal or adapter output.
-- **Keyframe:** value at a timeline position.
-- **Transition:** interpolation with duration and easing.
-- **Event:** occurrence at a time, scene boundary, completion or signal.
-- **Clock:** time source used to advance playback.
-- **Binding:** typed reference between a track and its target.
-
-### Proposed syntax
-
-```cudl
-TIME
-    timeline WelcomeFlow
-        duration 2400ms
-        clock relative
-        mode once
-
-        scene Entrance
-            at 0ms
-            duration 1000ms
-
-            track card.opacity
-                from 0
-                to 1
-                duration 700ms
-                ease out-cubic
-
-            track greeting.opacity
-                from 0
-                to 1
-                start 300ms
-                duration 700ms
-
-        scene Transition
-            at 1000ms
-            duration 1400ms
-
-            track button.scale
-                key 0ms 1
-                key 400ms 1.05
-                ease spring
-
-        on complete
-            @welcomeFinished
+```text
+.cudl source
+  -> lexer and parser
+  -> semantic validation and application IR
+  -> INDERMOS: host profile, dependencies and module order
+  -> PICKER: target and component/script selection
+  -> host adapter
+  -> host application runtime
 ```
 
-The from/to form is shorthand for two keyframes; explicit keyframes are canonical. Target paths resolve through typed bindings, never arbitrary reflection.
+The parser and reference compiler are currently implemented in Python.
+React integration is a TypeScript adapter. Keep the IR language-neutral so
+future native implementations (potentially Rust) can be introduced without
+changing the language or its source compatibility.
 
-### Timing semantics
+## 10. Implementation status
 
-- Target units are `ms`, `s`, `min` and `frame`; the current experimental compiler accepts `ms`, `s` and `min` only. `frame` remains staged until explicit frame-rate support is implemented.
-- Bare durations are invalid unless a default unit is declared.
-- `at` is absolute on the parent timeline; `start` is an offset from scene start.
-- Offsets are non-negative; timeline, scene and track durations must be positive. Contradictory keyframe order is an error.
-- Frame timing requires an explicit frame rate; never assume 60 FPS.
-- Internally normalize time to a monotonic integer timebase to avoid accumulated floating-point drift.
-- Wall-clock scheduling is separate from animation playback and requires an explicit clock and permission.
+| Capability | Status |
+| --- | --- |
+| Five-section parsing, duplicate checks, case-insensitive section names | Implemented |
+| Flexible section order with canonical IR serialization | Implemented in this milestone |
+| Dynamic values, safe expressions and functions | Implemented subset |
+| Component contracts and property validation | Implemented subset |
+| Pure device-aware component route selection | Implemented in this milestone |
+| GUIDE semantic validation and global routing inheritance | Planned |
+| Full native-block preservation and PICKER filtering | Planned |
+| INDERMOS host-stack and external package resolution | Planned |
+| React events, responsive renderer and native adapters | Planned |
+| Full TIME event and rendering adapters | Planned |
 
-### Playback and interpolation
-
-Portable playback operations: play, pause, resume, stop, seek, cancel; modes: once, loop, ping-pong, hold. Define end-of-timeline, restart, reverse and seek behavior. Seeking must not replay side effects unless explicitly requested. Side-effect events declare whether they fire once, on each iteration or on completion.
-
-Baseline easing: linear, in, out, in-out, in-cubic, out-cubic, in-out-cubic, step. Interpolation is type-aware: numbers, colors (documented color space), transforms and discrete values each have defined rules. Unsupported values require an adapter interpolator or a diagnostic.
-
-### Events and synchronisation
-
-Events may occur at positions, scene boundaries, completion, cancellation or named signals. Events call SCRIPTS only through declared bindings. Multiple timelines may share a clock or synchronise through named signals. External waits need cancellation and timeout policies. Pure notifications are distinct from side effects.
-
-### Portable architecture
-
-Compile TIME to a versioned Timeline IR containing stable IDs, normalized timestamps/timebase, typed target bindings, value types, keyframes, easing descriptors, playback/repeat policies, event references, source locations and capability requirements.
-
-The current experimental evaluator handles deterministic numeric interpolation, seeking by supplied position, and once/loop/ping-pong/hold playback normalization. It uses integer microseconds internally. Track targets must be dot-separated identifiers, and a scene may bind a target only once (case-insensitively); separate scenes may address the same target. Host adapters handle frame delivery, drawing, native animation APIs, audio output and lifecycle integration. The core must not depend on browser timers, CSS, Android APIs, a particular OS scheduler or a specific language. The current subset does not yet implement event dispatch, wall-clock scheduling, frame-based time, colors or transforms. It supports linear, quadratic/cubic in/out/in-out, step and deterministic spring easing for numeric tracks.
-
-Adapters advertise capabilities (target types, easing, clock precision, audio/video, background execution and lifecycle). Missing capabilities produce diagnostics or an explicitly declared fallback; they must not silently alter timing semantics. Disposed targets cancel or detach their tracks. Untrusted timelines have configurable limits for duration, tracks, keyframes, recursion and event frequency.
-
-## 10. Unified compiler model
-
-Pipeline:
-
-1. Lexer and source map.
-2. Parser and diagnostics.
-3. Semantic validation and name resolution.
-4. Typed section ASTs.
-5. Unified versioned application IR, including Timeline IR.
-6. Host capability negotiation.
-7. Host execution/rendering.
-
-SCRIPTS controls timelines through typed operations such as play, pause, seek and cancel. TIME calls SCRIPTS only through declared event bindings. This keeps side effects explicit and avoids circular evaluation.
-
-## 11. Complete five-part single-page specimen
-
-This is the target design specimen, not a claim that every construct is currently executable.
-
-```cudl
-bundle WelcomeApp
-
-    GUIDE
-        name WelcomeApp
-        version 1.0
-        target universal
-        theme soft
-        time-unit ms
-
-    KIT
-        theme soft
-            background #F5F0E8
-            foreground #292521
-            accent #B98B68
-            radius 18
-
-        component WelcomeCard
-            property heading
-            property subtitle optional
-            card
-                title heading
-                text subtitle
-
-    PAGES
-        page Home
-            background soft.background
-            center
-                @WelcomeCard
-                    heading Welcome
-                    subtitle A little room to breathe
-                text #greeting
-                button Get Started
-                    on click @start
-
-    SCRIPTS
-        #greeting = Hello, Harry
-        #started = false
-
-        @start
-            #started = true
-            @play WelcomeFlow
-
-        @welcomeFinished
-            print Welcome experience completed
-
-    TIME
-        timeline WelcomeFlow
-            duration 1800ms
-            clock relative
-            mode once
-
-            scene Entrance
-                at 0ms
-                duration 1000ms
-                track Home.WelcomeCard.opacity
-                    from 0
-                    to 1
-                    duration 700ms
-                    ease out-cubic
-                track Home.greeting.opacity
-                    from 0
-                    to 1
-                    start 250ms
-                    duration 750ms
-
-            scene Prompt
-                at 1000ms
-                duration 800ms
-                track Home.GetStarted.scale
-                    from 1
-                    to 1.05
-                    duration 400ms
-                    ease spring
-
-            on complete
-                @welcomeFinished
-```
-
-## 12. Conformance and implementation status
-
-This specification is the target contract, not a statement that all features exist today.
-
-| Capability | Target | Current status |
-| --- | --- | --- |
-| Indentation-first syntax | Required | Existing parser |
-| Hash variables and comments | Required | Implemented |
-| Dynamic assignment and safe expressions | Required | Implemented subset |
-| Functions and returns | Required | Implemented subset |
-| Conditionals and loops | Required | Planned |
-| Five-part semantic bundle | Required | Implemented subset: wrapper/section validation and versioned application IR; deeper section semantics remain staged |
-| Timeline syntax and timeline model | Required | Experimental numeric timelines/scenes/tracks/keyframes; serialized separately from application IR |
-| Portable timeline evaluator | Required | Implemented experimental numeric subset with integer-microsecond evaluation and bounded playback modes |
-| React/native timeline adapters | Required | React renders KIT/PAGES; TIME playback adapters are not implemented |
-| Capability negotiation | Required | Planned |
-
-Remaining implementation order:
-1. Add section-specific semantic validation for GUIDE, KIT, PAGES and SCRIPTS while preserving the shared application IR.
-2. Promote the experimental numeric timeline model into a versioned Timeline IR within the application bundle.
-3. Add explicit TIME event dispatch and SCRIPTS bindings with side-effect and cancellation rules.
-4. Extend interpolation to colors, transforms and discrete values with documented semantics.
-5. Add a React TIME playback adapter, then additional host adapters against a shared conformance suite.
-6. Add capability negotiation and conformance fixtures for clock precision, lifecycle and unsupported targets.
-
-A feature is implemented only when parser, IR, runtime/adapter, tests, docs and CI agree.
+A capability is advertised as implemented only when source parsing, IR,
+runtime/adapter, tests, documentation and CI agree.
