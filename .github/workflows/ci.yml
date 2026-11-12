@@ -2,7 +2,7 @@ name: CUDL core checks
 
 on:
   push:
-    branches: ["main", "foundation/**"]
+    branches: ["main", "foundation/**", "implementation/**"]
   pull_request:
 
 jobs:
