@@ -10,9 +10,22 @@ from .ir import IRDocument, IRNode, lower
 from .modules import ImportBinding, ImportSpec, ModuleGraph, parse_import, resolve_project
 from .parser import Document, Node, ParseResult, parse
 from .runtime import CUDLRuntimeError, RuntimeResult, run_script
+from .routing import (ComponentRoute, DeviceContext, RouteCompileResult, RouteResolution, compile_component_routes, compile_global_routes, merge_route_tables, resolve_component_route)
+from .picker import PickerSelection, filter_scripts, host_languages
 
 __all__ = [
     "Diagnostic",
+    "ComponentRoute",
+    "DeviceContext",
+    "RouteCompileResult",
+    "RouteResolution",
+    "compile_component_routes",
+    "compile_global_routes",
+    "merge_route_tables",
+    "resolve_component_route",
+    "PickerSelection",
+    "filter_scripts",
+    "host_languages",
     "ApplicationBundle",
     "ApplicationIR",
     "BundleParseResult",
