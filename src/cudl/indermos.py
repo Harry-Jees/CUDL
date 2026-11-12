@@ -143,7 +143,7 @@ def _toml_like_dependencies(path: str, content: str, ecosystem: str, deps: list[
             continue
         if ecosystem == "pypi" and section == "project" and re.match(r"dependencies\s*=\s*\[", line):
             array_lines = [line]
-            while "]" not in array_lines[-1] and index + 1 < len(lines):
+            while not re.search(r"\\]\\s*(?:#.*)?$", array_lines[-1]) and index + 1 < len(lines):
                 index += 1
                 array_lines.append(lines[index])
             for requirement in re.findall(r'"([^"]+)"', "\n".join(array_lines)):
