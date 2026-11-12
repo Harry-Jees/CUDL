@@ -68,8 +68,9 @@ CUDL is in its foundation stage. The repository includes an indentation-based
 parser, a versioned intermediate representation, module and component
 resolution, safe dynamic values, a bounded native script runtime, and an early
 React adapter with a first five-part application entry point. The five-part
-bundle validator and section-aware application IR are implemented on the
-current development branch. An experimental numeric TIME compiler and
+bundle validator accepts sections in any order and normalizes application IR.
+A pure device-aware KIT route selector and `cudl routes` preview command are
+implemented; platform rendering and adapter capability discovery remain staged. An experimental numeric TIME compiler and
 deterministic evaluator support bounded timeline, scene, track, keyframe,
 interpolation and playback-mode semantics; host rendering, event dispatch,
 non-numeric interpolation and production TIME adapters remain in development.
@@ -91,6 +92,7 @@ cudl check examples/hello.cudl
 cudl parse examples/hello.cudl
 cudl run examples/hello.cudl
 cudl bundle examples/five-part-welcome.cudl
+cudl routes examples/hello-react-python.cudl --component Navigation --platform android --device phone
 pytest
 ```
 
