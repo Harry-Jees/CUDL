@@ -6,7 +6,7 @@ from cudl.indermos import analyze_project
 def test_detects_react_python_and_android_stacks_from_manifests():
     result = analyze_project({
         "web/package.json": '{"dependencies":{"react":"^19.0.0","zod":"^4.0.0"}}',
-        "api/requirements.txt": "fastapi==0.115.0\\nuvicorn>=0.30\\n",
+        "api/requirements.txt": "fastapi==0.115.0\nuvicorn>=0.30\n",
         "android/src/main/AndroidManifest.xml": "<manifest />",
     })
     names = {item.name for item in result.stacks}
@@ -18,10 +18,10 @@ def test_detects_react_python_and_android_stacks_from_manifests():
 def test_explicit_cudl_guide_targets_take_priority():
     result = analyze_project({
         "app.cudl": (
-            "GUIDE\\n"
-            "    targets = [react, python]\\n"
-            "PAGES\\n"
-            "    page Home\\n"
+            "GUIDE\n"
+            "    targets = [react, python]\n"
+            "PAGES\n"
+            "    page Home\n"
         )
     })
     assert {item.name for item in result.stacks} == {"react", "python"}
@@ -30,7 +30,7 @@ def test_explicit_cudl_guide_targets_take_priority():
 
 def test_detects_conflicting_declared_versions_without_installing():
     result = analyze_project({
-        "requirements.txt": "httpx==0.25.0\\nhttpx==0.27.0\\n"
+        "requirements.txt": "httpx==0.25.0\nhttpx==0.27.0\n"
     })
     assert any("Conflicting declared versions" in item for item in result.warnings)
 
