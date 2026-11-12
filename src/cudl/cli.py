@@ -13,6 +13,7 @@ from .lexer import LexError, tokenize
 from .runtime import CUDLRuntimeError, run_script
 from .bundle import lower_bundle, parse_bundle
 from .time import compile_time
+from .routing import DeviceContext, compile_component_routes, resolve_component_route
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -29,6 +30,14 @@ def _parser() -> argparse.ArgumentParser:
         command.add_argument("file", type=Path)
     run = commands.add_parser("run", help="Run supported native CUDL script blocks.")
     run.add_argument("file", type=Path)
+    routes = commands.add_parser("routes", help="Preview the selected KIT implementation for a device.")
+    routes.add_argument("file", type=Path)
+    routes.add_argument("--component", required=True)
+    routes.add_argument("--platform", required=True)
+    routes.add_argument("--device", default="any")
+    routes.add_argument("--width", type=int)
+    routes.add_argument("--input", dest="input_mode")
+    routes.add_argument("--capability", action="append", default=[])
     graph = commands.add_parser("graph", help="Resolve project imports and print the module graph.")
     graph.add_argument("project", type=Path)
     graph.add_argument("entry", help="Entry module path relative to the project root.")
@@ -55,6 +64,35 @@ def main() -> int:
     except OSError as exc:
         print(f"error: cannot read {args.file}: {exc}", file=sys.stderr)
         return 2
+
+    if args.command == "routes":
+        result = parse_bundle(source, source=str(args.file))
+        for diagnostic in result.diagnostics:
+            print(f"{diagnostic.code} line {diagnostic.line}: {diagnostic.message}", file=sys.stderr)
+        if result.has_errors:
+            return 1
+        kit_nodes = result.bundle.sections.get("kit", [])
+        compiled = compile_component_routes(kit_nodes)
+        if compiled.diagnostics:
+            for diagnostic in compiled.diagnostics:
+                print(diagnostic, file=sys.stderr)
+            return 1
+        context = DeviceContext(
+            platform=args.platform,
+            device=args.device,
+            width=args.width,
+            input=args.input_mode,
+            capabilities=frozenset(args.capability),
+        )
+        resolution = resolve_component_route(args.component, compiled.routes, context)
+        print(json.dumps({
+            "component": resolution.component,
+            "platform": context.platform,
+            "device": context.device,
+            "implementation": resolution.implementation,
+            "reason": resolution.reason,
+        }, indent=2))
+        return 0 if resolution.implementation else 1
 
     if args.command == "bundle":
         result = parse_bundle(source, source=str(args.file))
