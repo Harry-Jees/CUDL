@@ -54,3 +54,18 @@ def test_unknown_host_is_not_guessed():
 
     with pytest.raises(ValueError, match="Unknown CUDL host"):
         filter_scripts([], "mystery")
+
+
+def test_native_blocks_preserve_source_without_parsing_host_syntax():
+    source = (
+        "SCRIPTS\n"
+        "    python\n"
+        "        def greeting():\n"
+        "            return 'hello'\n"
+        "    javascript\n"
+        "        export const greeting = () => 'hello';\n"
+    )
+    nodes = _script_nodes(source)
+    assert nodes[0].raw_source == "def greeting():\n    return 'hello'"
+    assert nodes[1].raw_source == "export const greeting = () => 'hello';"
+    assert nodes[0].children == []
