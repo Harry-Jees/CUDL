@@ -18,12 +18,14 @@ class Node:
     value: str = ""
     children: list["Node"] = field(default_factory=list)
     line: int = 1
+    raw_source: str | None = None
 
     def to_dict(self) -> dict[str, object]:
         return {
             "kind": self.kind,
             "value": self.value,
             "line": self.line,
+            "raw_source": self.raw_source,
             "children": [child.to_dict() for child in self.children],
         }
 
@@ -55,6 +57,7 @@ class ParseResult:
 _NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*")
 _AT_NAME = re.compile(r"^@([A-Za-z_][A-Za-z0-9_-]*)")
 _VARIABLE_ASSIGNMENT = re.compile(r"^#[A-Za-z_][A-Za-z0-9_]*\s*=\s*\S.*$")
+_NATIVE_BLOCKS = {"js", "javascript", "ts", "typescript", "python", "java", "kotlin", "swift", "c", "cpp", "rust", "go", "json"}
 
 
 def _strip_comment(text: str) -> str:
@@ -104,8 +107,31 @@ def parse(text: str, source: str | None = None) -> ParseResult:
     roots: list[Node] = []
     diagnostics: list[Diagnostic] = []
     stack: list[tuple[int, Node]] = []
+    native_node: Node | None = None
+    native_indent: int | None = None
+    native_lines: list[str] = []
+
+    def finish_native_block() -> None:
+        nonlocal native_node, native_indent, native_lines
+        if native_node is not None:
+            native_node.raw_source = "\n".join(native_lines).rstrip("\n")
+        native_node = None
+        native_indent = None
+        native_lines = []
 
     for line_number, raw in enumerate(text.splitlines(), start=1):
+        if native_node is not None:
+            leading_native = raw[: len(raw) - len(raw.lstrip(" "))]
+            native_width = len(leading_native)
+            if not raw.strip() or native_width > (native_indent or 0):
+                if not raw.strip():
+                    native_lines.append("")
+                else:
+                    base = (native_indent or 0) + 4
+                    native_lines.append(raw[base:] if len(raw) >= base else "")
+                continue
+            finish_native_block()
+
         if not raw.strip() or raw.lstrip().startswith("##"):
             continue
 
@@ -176,6 +202,12 @@ def parse(text: str, source: str | None = None) -> ParseResult:
             roots.append(node)
 
         stack.append((indent, node))
+        if kind.casefold() in _NATIVE_BLOCKS:
+            native_node = node
+            native_indent = indent
+            native_lines = []
+
+    finish_native_block()
 
     return ParseResult(
         document=Document(nodes=roots, source=source),
