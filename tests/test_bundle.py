@@ -27,7 +27,7 @@ def test_parses_all_five_sections_inside_named_bundle():
 def test_allows_omitted_sections_and_direct_root_sections():
     result = parse_bundle(
         "GUIDE\n"
-        "    name SmallApp\n"
+        "    name = SmallApp\n"
         "PAGES\n"
         "    page Home\n"
     )
@@ -39,9 +39,9 @@ def test_allows_omitted_sections_and_direct_root_sections():
 def test_rejects_duplicate_sections():
     result = parse_bundle(
         "GUIDE\n"
-        "    name First\n"
+        "    name = First\n"
         "GUIDE\n"
-        "    name Second\n"
+        "    name = Second\n"
     )
 
     assert result.has_errors
@@ -95,7 +95,7 @@ def test_lower_bundle_emits_versioned_typed_section_ir():
     parsed = parse_bundle(
         "bundle WelcomeApp\n"
         "    GUIDE\n"
-        "        name WelcomeApp\n"
+        "        name = WelcomeApp\n"
         "    PAGES\n"
         "        page Home\n"
         "            text Hello\n"
@@ -138,11 +138,11 @@ def test_reports_multiple_bundle_wrappers_without_crashing():
 
 def test_requires_equals_for_guide_and_kit_configuration():
     result = parse_bundle(
-        "GUIDE\\n"
-        "    name App\\n"
-        "KIT\\n"
+        "GUIDE\n"
+        "    name App\n"
+        "KIT\n"
         "    theme = warm\\n"
-        "        background #ffffff\\n"
+        "        background #ffffff\n"
     )
     assert result.has_errors
     assert sum(item.code == "CUDL2007" for item in result.diagnostics) == 2
