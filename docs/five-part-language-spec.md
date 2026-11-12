@@ -327,18 +327,18 @@ This is the target design specimen, not a claim that every construct is currentl
 bundle WelcomeApp
 
     GUIDE
-        name WelcomeApp
-        version 1.0
-        target universal
-        theme soft
-        time-unit ms
+        name = WelcomeApp
+        version = 1.0
+        target = universal
+        theme = soft
+        time-unit = ms
 
     KIT
-        theme soft
-            background #F5F0E8
-            foreground #292521
-            accent #B98B68
-            radius 18
+        theme = soft
+            background = #F5F0E8
+            foreground = #292521
+            accent = #B98B68
+            radius = 18
 
         component WelcomeCard
             property heading
@@ -352,8 +352,8 @@ bundle WelcomeApp
             background soft.background
             center
                 @WelcomeCard
-                    heading Welcome
-                    subtitle A little room to breathe
+                    heading = Welcome
+                    subtitle = A little room to breathe
                 text #greeting
                 button Get Started
                     on click @start
