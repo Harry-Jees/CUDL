@@ -12,6 +12,7 @@ from .parser import Document, Node, ParseResult, parse
 from .runtime import CUDLRuntimeError, RuntimeResult, run_script
 from .routing import (ComponentRoute, DeviceContext, RouteCompileResult, RouteResolution, compile_application_routes, compile_component_routes, compile_global_routes, merge_route_tables, resolve_component_route)
 from .picker import PickerSelection, filter_scripts, filter_scripts_for_hosts, host_languages
+from .indermos import DeclaredDependency, HostStack, StackAnalysis, analyze_project
 
 __all__ = [
     "Diagnostic",
@@ -25,6 +26,10 @@ __all__ = [
     "merge_route_tables",
     "resolve_component_route",
     "PickerSelection",
+    "DeclaredDependency",
+    "HostStack",
+    "StackAnalysis",
+    "analyze_project",
     "filter_scripts",
     "filter_scripts_for_hosts",
     "host_languages",
