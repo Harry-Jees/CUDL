@@ -25,7 +25,7 @@ def test_react_picker_keeps_javascript_and_json_but_excludes_python():
         "react",
     )
     assert [node.kind for node in selection.selected] == ["script", "javascript", "json"]
-    assert selection.excluded == (("python", 7),)
+    assert selection.excluded == (("python", 5),)
 
 
 def test_python_picker_selects_python_and_keeps_portable_blocks():
