@@ -22,6 +22,7 @@ bundling and application startup.
 - Basic layout and text elements.
 - Lazy image elements.
 - Custom component registry.
+- GUIDE-level and component-local platform/device routing with local-rule precedence.
 - Local component definitions and primitive property injection.
 - Unquoted text, numeric, boolean, and null values.
 - Safe hash-prefixed data paths with dotted properties and array/mapping indexes.
@@ -100,3 +101,29 @@ The React adapter renders PAGES and indexes reusable component declarations
 from KIT. GUIDE configuration remains a host/build concern. SCRIPTS execution
 and TIME playback are not automatically run by React; the host must explicitly
 connect those capabilities when their adapters are available.
+
+
+## Platform and device routing
+
+The host supplies a trusted device context. The adapter does not guess the
+device or inspect browser globals:
+
+```tsx
+const ui = renderCUDLApplication(applicationIR, components, {
+  device: {
+    platform: "android",
+    device: "phone",
+    width: 390,
+    input: "touch",
+    capabilities: ["camera"],
+  },
+  onDiagnostic: console.warn,
+});
+```
+
+GUIDE-level routes can map a component centrally. KIT component routes can
+override the global mapping. The adapter selects the most specific compatible
+implementation and uses a declared default when no platform-specific rule
+matches. A missing implementation or missing fallback produces diagnostic
+CUDL4003. The host remains responsible for providing accurate device data and
+registering the selected implementation.
