@@ -57,10 +57,7 @@ those results to filter and package content. Their architecture, proposed APIs,
 safety boundaries and implementation stages are specified in
 [`docs/indermos-picker-toolchain.md`](docs/indermos-picker-toolchain.md).
 
-**Status:** the repository currently has a basic local CUDL module resolver
-and dependency-first ordering. Full stack identification, third-party package
-resolution, target-aware native script filtering and PICKER bundle generation
-are proposed work, not implemented features.
+**Status:** the repository has local module resolution and dependency-first ordering, component-level and GUIDE-level device routing, and an initial PICKER selector for declared React, Python, Android and iOS host profiles. Full host-stack identification, third-party package resolution, source-preserving native blocks, generated platform bundles and production host adapters remain unfinished.
 
 ## Current status
 
@@ -81,8 +78,7 @@ Python, JavaScript, Java and C/C++ execution, general-purpose control flow,
 a CUDL-owned garbage collector and full JSON block interoperability are not
 currently implemented.
 
-## Development
-
+## Configuration and routing\n\nGUIDE and KIT configuration uses explicit assignments (`name = value`). Built-in keywords and section names are case-insensitive. A single application file can contain all five sections in any order; each section may appear once.\n\nDevice routing supports a GUIDE-level default map and component-specific overrides. Rules can match platform, device class, width range, input mode and required capabilities. Component-local rules take precedence over global rules, then the declared `default` route is used. PICKER selects native script blocks for an explicit host profile; it does not execute them or install dependencies.\n\nSee [`docs/platform-routing.md`](docs/platform-routing.md) for routing and PICKER examples.\n\n## Development\n
 Requires Python 3.10 or newer.
 
 ```bash
