@@ -58,9 +58,9 @@ safety boundaries and implementation stages are specified in
 [`docs/indermos-picker-toolchain.md`](docs/indermos-picker-toolchain.md).
 
 **Status:** the repository currently has a basic local CUDL module resolver
-and dependency-first ordering. Full stack identification, third-party package
-resolution, target-aware native script filtering and PICKER bundle generation
-are proposed work, not implemented features.
+and dependency-first ordering. Full stack identification, third-party package resolution, and complete
+multi-host PICKER bundle generation are proposed work. Host-aware native
+script selection is implemented and available through `cudl picker`.
 
 ## Current status
 
@@ -70,7 +70,9 @@ resolution, safe dynamic values, a bounded native script runtime, and an early
 React adapter with a first five-part application entry point. The five-part
 bundle validator accepts sections in any order and normalizes application IR.
 A pure device-aware KIT route selector and `cudl routes` preview command are
-implemented; platform rendering and adapter capability discovery remain staged. An experimental numeric TIME compiler and
+implemented. Host-aware PICKER selection of compatible native script blocks
+is implemented and can be inspected with `cudl picker`; multi-host bundle
+packaging, platform rendering and adapter capability discovery remain staged. An experimental numeric TIME compiler and
 deterministic evaluator support bounded timeline, scene, track, keyframe,
 interpolation and playback-mode semantics; host rendering, event dispatch,
 non-numeric interpolation and production TIME adapters remain in development.
@@ -93,6 +95,7 @@ cudl parse examples/hello.cudl
 cudl run examples/hello.cudl
 cudl bundle examples/five-part-welcome.cudl
 cudl routes examples/hello-react-python.cudl --component Navigation --platform android --device phone
+cudl picker examples/hello-react-python.cudl --host react
 pytest
 ```
 
