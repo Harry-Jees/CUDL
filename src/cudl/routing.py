@@ -172,3 +172,58 @@ def resolve_component_route(
         chosen = fallback[0]
         return RouteResolution(component, chosen.implementation, chosen, "matched default route")
     return RouteResolution(component, None, None, "no compatible route or default implementation")
+
+
+def compile_global_routes(nodes: Iterable[Node]) -> RouteCompileResult:
+    """Compile GUIDE-level route maps.
+
+    Syntax:
+        route = android
+            component = Navigation
+            device = phone
+            use = AndroidPhoneNavigation
+
+    Global routes are useful for routing several components from one place.
+    Component-local routes can override them through merge_route_tables().
+    """
+    synthetic: list[Node] = []
+    for route_node in nodes:
+        if route_node.kind.casefold() != "route":
+            continue
+        component = next(
+            (_assignment(child) for child in route_node.children
+             if child.kind.casefold() == "component"),
+            None,
+        )
+        if not component:
+            continue
+        route_children = [
+            child for child in route_node.children
+            if child.kind.casefold() != "component"
+        ]
+        synthetic.append(Node(
+            kind="component",
+            value=component,
+            children=[Node(
+                kind="route",
+                value=route_node.value,
+                children=route_children,
+                line=route_node.line,
+            )],
+            line=route_node.line,
+        ))
+    return compile_component_routes(synthetic)
+
+
+def merge_route_tables(
+    global_routes: dict[str, list[ComponentRoute]],
+    component_routes: dict[str, list[ComponentRoute]],
+) -> dict[str, list[ComponentRoute]]:
+    """Merge global and local routes; local declarations win equal matches."""
+    from dataclasses import replace
+
+    merged = {name: list(items) for name, items in global_routes.items()}
+    for name, items in component_routes.items():
+        merged.setdefault(name, [])
+        merged[name].extend(replace(item, priority=item.priority + 1_000_000) for item in items)
+    return merged
