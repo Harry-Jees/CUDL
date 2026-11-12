@@ -1,4 +1,6 @@
-from pathlib import Path\n\nfrom cudl import compile_component_routes, lower_bundle, parse_bundle
+from pathlib import Path
+
+from cudl import compile_component_routes, lower_bundle, parse_bundle
 
 
 def test_parses_all_five_sections_inside_named_bundle():
