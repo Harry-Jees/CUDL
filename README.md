@@ -78,7 +78,16 @@ Python, JavaScript, Java and C/C++ execution, general-purpose control flow,
 a CUDL-owned garbage collector and full JSON block interoperability are not
 currently implemented.
 
-## Configuration and routing\n\nGUIDE and KIT configuration uses explicit assignments (`name = value`). Built-in keywords and section names are case-insensitive. A single application file can contain all five sections in any order; each section may appear once.\n\nDevice routing supports a GUIDE-level default map and component-specific overrides. Rules can match platform, device class, width range, input mode and required capabilities. Component-local rules take precedence over global rules, then the declared `default` route is used. PICKER selects native script blocks for an explicit host profile; it does not execute them or install dependencies.\n\nSee [`docs/platform-routing.md`](docs/platform-routing.md) for routing and PICKER examples.\n\n## Development\n
+## Configuration and routing
+
+GUIDE and KIT configuration uses explicit assignments (`name = value`). Built-in keywords and section names are case-insensitive. A single application file can contain all five sections in any order; each section may appear once.
+
+Device routing supports a GUIDE-level default map and component-specific overrides. Rules can match platform, device class, width range, input mode and required capabilities. Component-local rules take precedence over global rules, then the declared `default` route is used. PICKER selects native script blocks for an explicit host profile; it does not execute them or install dependencies.
+
+See [`docs/platform-routing.md`](docs/platform-routing.md) for routing and PICKER examples.
+
+## Development
+
 Requires Python 3.10 or newer.
 
 ```bash
