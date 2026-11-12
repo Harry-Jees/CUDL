@@ -94,19 +94,19 @@ def test_route_resolution_is_case_insensitive_for_keywords_and_names():
 
 def test_supports_global_route_map_and_local_component_override():
     guide = parse(
-        "GUIDE\\n"
-        "    route = android\\n"
-        "        component = Navigation\\n"
-        "        use = GlobalAndroidNavigation\\n"
-        "    route = default\\n"
-        "        component = Navigation\\n"
-        "        use = GlobalFallbackNavigation\\n"
+        "GUIDE\n"
+        "    route = android\n"
+        "        component = Navigation\n"
+        "        use = GlobalAndroidNavigation\n"
+        "    route = default\n"
+        "        component = Navigation\n"
+        "        use = GlobalFallbackNavigation\n"
     )
     kit = parse(
-        "KIT\\n"
-        "    component Navigation\\n"
-        "        route = android\\n"
-        "            use = LocalAndroidNavigation\\n"
+        "KIT\n"
+        "    component Navigation\n"
+        "        route = android\n"
+        "            use = LocalAndroidNavigation\n"
     )
     global_result = compile_global_routes(guide.document.nodes[0].children)
     local_result = compile_component_routes(kit.document.nodes[0].children)
@@ -119,10 +119,10 @@ def test_supports_global_route_map_and_local_component_override():
 
 def test_global_route_map_uses_default_for_unlisted_platform():
     guide = parse(
-        "GUIDE\\n"
-        "    route = default\\n"
-        "        component = Header\\n"
-        "        use = UniversalHeader\\n"
+        "GUIDE\n"
+        "    route = default\n"
+        "        component = Header\n"
+        "        use = UniversalHeader\n"
     )
     routes = compile_global_routes(guide.document.nodes[0].children)
     result = resolve_component_route("Header", routes.routes, DeviceContext("ios", "tablet"))
