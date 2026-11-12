@@ -1,190 +1,232 @@
 # CUDL syntax — beginner-first draft
 
-This is the canonical syntax direction for CUDL. It favors readable words,
-indentation, and a small number of symbols. The parser and runtime are still
-being built in stages; syntax shown as planned is not a claim of execution support.
+This document defines the current syntax direction. Examples marked as planned
+are specifications, not claims that every adapter already executes them.
 
-## 1. Blocks and indentation
+## 1. Blocks, names and indentation
 
 - Four spaces represent one indentation level.
-- Indentation defines every native CUDL block.
-- Tabs, braces, block brackets, colons, and semicolons are not required.
+- Indentation defines native CUDL blocks.
+- Tabs, braces, semicolons and block-closing keywords are not required.
 - Blank lines are ignored.
-- Keywords and CUDL identifiers are case-insensitive.
+- Built-in keywords and the five section names are case-insensitive.
+- User-defined names preserve their written spelling; name lookup is
+  case-insensitive for portability.
 - A nested block is indented exactly one level beneath its parent.
+- The five peer sections may appear in any order, at most once each.
 
 ```cudl
-page Home
-    header
-        title Welcome to CUDL
+GUIDE
+    name = HelloApp
 
-    content
-        text My first CUDL application
-        button Get Started
+PAGES
+    page Home
+        header
+            title Welcome to CUDL
+        content
+            text My first CUDL application
+            button Get Started
 ```
 
-Ordinary text values do not need quotes. Quotes remain available for strings
-that need explicit escaping or unambiguous special characters.
+Ordinary text values do not need quotes. Quotes remain available when escaping
+or unambiguous special characters are needed.
 
-## 2. Variables and dynamic values
+## 2. Assignments and values
 
-A single hash introduces a variable declaration or reference:
+Use one consistent assignment form in configuration, themes, component
+properties and variables:
 
 ```cudl
-#name = Harry
-#age = 21
+name = HelloApp
+background = #F5F0E8
+radius = 18
 #active = true
-
-print #name
 ```
 
-- Variables are dynamically typed.
-- Values determine their type; explicit type declarations are not required.
-- A variable may be reassigned to a value of another type.
-- `true`, `false`, and `null` are typed values.
-- `const` may be used for a value that must not be reassigned.
-- A hash-prefixed path is the only canonical way to request variable lookup.
+The equals sign separates a name from its value. Structural declarations such
+as `page Home`, `component Card` and `route = android` introduce blocks;
+their nested properties use assignments.
 
-```cudl
-#users = #data.users
-#first = #users[0]
-#displayName = #users[0].profile[name]
-```
-
-Indexing uses square brackets. Numeric indexes address sequences; bare names
-inside brackets are mapping keys. Quoted keys are available for keys containing
-spaces or punctuation. Simple lists and mappings can also be written without
-quoting ordinary words:
+Values are dynamically typed. Numbers, booleans and null retain their types.
+Ordinary words and phrases are text. Lists use square brackets; mappings use
+curly braces only as inline values, not as block delimiters.
 
 ```cudl
 #people = [Harry, Ada, Lin]
 #profile = {name: Harry, age: 21}
 #first = #people[0]
 #person = #profile[name]
+#displayName = #data.users[0].profile[name]
 ```
 
-The first runtime supports bounded list and mapping literals, safe indexing,
-and primitive values. It does not yet provide arbitrary object construction.
+Variables are dynamically typed; a later assignment may change the value's
+type. A hash-prefixed path is the explicit way to read a variable or host-data
+path. Indexing is bounds-checked and does not expose arbitrary host reflection.
 
 ## 3. Comments
 
-Double hash starts a comment:
+Double hash starts a comment. Single hash is reserved for variables.
 
 ```cudl
-## This is a comment
-#name = Harry ## This is an inline comment
+## Full-line comment
+#name = Harry ## Inline comment
 ```
-
-A single hash is reserved for variables and must not be treated as a comment.
 
 ## 4. Functions
 
-An at-prefixed name declares a native CUDL function. Its parameters are hash
-variables. The function body is an indentation block; no `def`, colon, or
-parentheses are required.
+An at-prefixed name declares or calls a CUDL function. Parameters are
+hash-prefixed variables. A declaration owns an indented body; a call does not.
 
 ```cudl
-script
-    @greet #person
-        print Hello #person
+@greet #person
+    print Hello #person
 
-    @greet Harry
+@add #left #right
+    return #left + #right
+
+#total = @add 10 20
+@greet Harry
 ```
 
-Function calls use `@` too. Indentation distinguishes the two: a function
-declaration has an indented body; a call has no child block. Within a `script`
-block, `@name` is a function declaration when it owns a body and a function
-call when it does not. In page/design blocks, `@Name` remains a reusable
-component reference.
+In design context, `@Name` references a reusable component. The parser
+resolves the meaning from its containing section, not capitalization.
 
-```cudl
-script
-    @add #a #b
-        return #a + #b
-
-    #total = @add 10 20
-```
-
-The reference runtime now executes dynamic assignments, type-changing
-reassignment, hash-path indexing, safe arithmetic/comparison/boolean
-expressions, function calls, return values, and text interpolation. Function
-parameters and variables are dynamically typed. For example:
-
-\x60\x60\x60cudl
-script
-    #age = 21
-    #age = Harry
-
-    @greet #person
-        print Hello #person
-
-    @add #left #right
-        return #left + #right
-
-    @greet #age
-    #total = @add 10 20
-    print #total
-\x60\x60\x60
-
-Use `const #name = value` when reassignment should be rejected. The runtime
-uses a bounded, explicit expression evaluator; it does not use Python eval/exec,
-load host modules, or execute `js`/`python` blocks. The first runtime release
-does not yet implement loops, conditional blocks, asynchronous functions, or
+The reference runtime supports dynamic assignments, safe expressions,
+hash-path indexing, function calls, returns and text interpolation. It does
+not yet support loops, conditional blocks, asynchronous functions or arbitrary
 host-language execution.
 
-## 5. Design components
+## 5. GUIDE
 
-Components keep the concise at-reference form in design blocks:
-
-```cudl
-component ProfileCard
-    property name
-    property photo
-    property subtitle optional
-
-    card
-        image photo
-        heading name
-        text subtitle
-
-page Home
-    @ProfileCard
-        name = Harry
-        photo = profile.png
-        subtitle = Student Developer
-```
-
-## 6. External languages
-
-External-language blocks keep their own native syntax. CUDL does not rewrite
-JavaScript, Python, Java, C, or another host language.
+GUIDE is the small application manifest: identity, target platforms, runtime
+requirements and global routing policy. It is not a general-purpose settings
+drawer and does not contain visual styling or page logic.
 
 ```cudl
-js
-    const version = 1
-    console.log(version)
-
-python
-    print("Hello from Python")
+GUIDE
+    name = HelloApp
+    version = 1.0
+    targets = [android, ios, web, windows, macos, linux]
+    routing = automatic
+    default-device = responsive
 ```
 
-The host project and installed adapters determine which external runtimes and
-dependencies are actually available.
+Use `targets` to declare intended build targets, not to claim that adapters
+are installed. Dependency declarations and host-stack discovery are handled
+by INDERMOS. Never put secrets in source-controlled GUIDE data.
 
-## 7. Punctuation
+## 6. KIT
+
+KIT defines reusable components, themes, design tokens, styles and component
+contracts. Every token and component property uses the same equals syntax.
+
+```cudl
+KIT
+    theme = light-brown
+        background = #F5F0E8
+        foreground = #292521
+        accent = #B98B68
+        radius = 18
+
+    component WelcomeCard
+        property = heading
+        property = subtitle
+        card
+            title heading
+            text subtitle
+```
+
+### Component routing
+
+A component may have multiple implementations. The adapter selects the most
+specific compatible route for the current platform and device class, then
+falls back to `default`.
+
+```cudl
+KIT
+    component Navigation
+        route = android
+            device = phone
+            use = AndroidPhoneNavigation
+
+        route = android
+            device = tablet
+            use = AndroidTabletNavigation
+
+        route = web
+            use = WebNavigation
+
+        route = default
+            use = ResponsiveNavigation
+```
+
+Platform and device class are separate: an Android tablet is both
+`platform = android` and `device = tablet`. Optional route constraints may
+include `min-width`, `max-width`, `input`, `requires` and `priority`.
+A route is only selected when the host adapter reports the required
+capabilities. No compatible route and no default must produce a diagnostic;
+CUDL must not silently substitute an unrelated component.
+
+GUIDE's `routing = automatic` enables host-context selection. Component routes
+provide explicit overrides. A host may also supply a global responsive
+fallback; component-specific matches take precedence.
+
+## 7. PAGES
+
+PAGES describes screens, layout and interaction declarations. Business logic
+belongs in SCRIPTS.
+
+```cudl
+PAGES
+    page Home
+        background = light-brown.background
+        center
+            @WelcomeCard
+                heading = Welcome, Harry
+                subtitle = A little room to breathe
+            button Get Started
+                on click @start
+```
+
+## 8. SCRIPTS and native language blocks
+
+SCRIPTS owns variables, functions, calculations, event handlers and host
+capability calls.
+
+```cudl
+SCRIPTS
+    #started = false
+
+    @start
+        #started = true
+        print Application started
+
+    python
+        print("Python host only")
+
+    javascript
+        console.log("JavaScript host only")
+```
+
+Native blocks preserve their original language source. PICKER selects blocks
+compatible with the host target; CUDL does not execute arbitrary native code.
+JSON blocks, when enabled, are structured data and are never executable.
+
+## 9. TIME
+
+TIME describes timelines, scenes, tracks, keyframes, playback and temporal
+events. Its numeric evaluator is experimental; host playback adapters and
+event dispatch remain staged. See the five-part language specification for
+timing and interpolation semantics.
+
+## 10. Punctuation
 
 - `#` — variable declaration and reference.
 - `##` — comment.
-- `@` — native function declaration/call in scripts; component reference in design.
-- `[]` — indexing only in native CUDL syntax.
-- `.` — property access in a hash-prefixed path.
+- `@` — CUDL function declaration/call or component reference by context.
+- `[]` — list literals and indexing.
 - `=` — assignment.
-- `->` — reserved for concise navigation/action declarations.
-- Quotes — optional for ordinary text, available for escaped or special strings.
-
-Run a file with `cudl run app.cudl` to execute its supported native `script`
-blocks. Use `cudl check app.cudl` to validate indentation and syntax without
-running it.
+- Quotes — optional for ordinary text, available for escaping and special text.
 
 The goal is not to remove every symbol. Each symbol should have one obvious
 purpose and should not be required when indentation or plain words are clearer.
