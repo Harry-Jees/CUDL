@@ -39,7 +39,7 @@ class PickerSelection:
             "version": 1,
             "host": self.host,
             "selected": [
-                {"language": node.kind.casefold(), "line": node.line}
+                {"language": node.kind.casefold(), "line": node.line, "source": node.raw_source}
                 for node in self.selected
             ],
             "excluded": [
