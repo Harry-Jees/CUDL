@@ -31,6 +31,7 @@ class IRNode:
     name: str
     value: str = ""
     line: int = 1
+    raw_source: str | None = None
     category: str = "generic"
     children: list["IRNode"] = field(default_factory=list)
 
@@ -41,6 +42,7 @@ class IRNode:
             "value": self.value,
             "category": self.category,
             "source": {"line": self.line},
+            "raw_source": self.raw_source,
             "children": [child.to_dict() for child in self.children],
         }
 
@@ -83,6 +85,7 @@ def _lower_node(node: Node, in_script: bool = False) -> IRNode:
         name=kind,
         value=node.value,
         line=node.line,
+        raw_source=node.raw_source,
         category=_category(kind, in_script, bool(node.children)),
         children=[_lower_node(child, script_context) for child in node.children],
     )
