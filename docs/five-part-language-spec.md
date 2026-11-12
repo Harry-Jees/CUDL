@@ -97,14 +97,21 @@ GUIDE declares project metadata and environment requirements, not page markup or
 
 ```cudl
 GUIDE
-    name WelcomeApp
-    version 1.0
-    target universal
-    theme soft
-    time-unit ms
-    platform web optional
-    platform android optional
-    platform desktop optional
+    name = WelcomeApp
+    version = 1.0
+    targets = [react, python]
+    platforms = [android, ios, web, windows, macos, linux]
+    routing = device
+    time-unit = ms
+
+    route = android
+        component = Navigation
+        device = phone
+        use = AndroidPhoneNavigation
+
+    route = default
+        component = Navigation
+        use = ResponsiveNavigation
 ```
 
 A target does not guarantee adapter availability. Dependency resolution belongs to the host/build integration. Never place secrets in source-controlled configuration.
@@ -115,11 +122,11 @@ KIT defines reusable components, themes, tokens, styles and widgets.
 
 ```cudl
 KIT
-    theme soft
-        background #F5F0E8
-        foreground #292521
-        accent #B98B68
-        radius 18
+    theme = soft
+        background = #F5F0E8
+        foreground = #292521
+        accent = #B98B68
+        radius = 18
 
     component WelcomeCard
         property heading
@@ -131,7 +138,7 @@ KIT
 
 Component properties are explicit inputs. Adapters map components to DOM nodes, native widgets or other host representations while preserving their contracts.
 
-## 8. PAGES
+## 9. PAGES
 
 PAGES describes screens and layout trees. Business logic belongs in SCRIPTS.
 
@@ -141,8 +148,8 @@ PAGES
         background soft.background
         center
             @WelcomeCard
-                heading Welcome, Harry
-                subtitle A little room to breathe
+                heading = Welcome, Harry
+                subtitle = A little room to breathe
             button Get Started
                 on click @start
 ```
@@ -150,7 +157,7 @@ PAGES
 Layout and interaction nodes lower to typed IR nodes. Unsupported essential behavior must produce diagnostics, not disappear silently.
 
 
-## 7.1 Platform and device routing
+## 7. Platform and device routing
 
 GUIDE may define a global route map, and individual KIT components may define
 their own routes. Both use explicit equals assignments:
@@ -183,7 +190,7 @@ diagnostic/result; it must not silently use an incompatible implementation.
 The host adapter supplies the device context; CUDL core does not guess or
 probe the device itself.
 
-## 7.2 PICKER host selection
+## 8. PICKER host selection
 
 PICKER selects native script blocks for an explicitly declared host profile.
 React selects JavaScript/TypeScript, Python selects Python, Android selects
@@ -193,7 +200,7 @@ does not execute code, install dependencies, or guarantee that a runtime is
 available. Native source-preserving extraction and full bundle packaging are
 still staged.
 
-## 9. SCRIPTS
+## 10. SCRIPTS
 
 SCRIPTS owns variables, functions, calculations, event handlers and calls to host capabilities.
 
@@ -214,7 +221,7 @@ SCRIPTS
 
 Host-language blocks preserve native syntax. CUDL does not execute arbitrary host code; the host adapter checks whether the language runtime and dependencies are available and permitted.
 
-## 10. TIME — portable timeline system
+## 11. TIME — portable timeline system
 
 TIME is a first-class peer of SCRIPTS, not a UI-only animation shortcut. It describes visual animation, scene sequencing, presentations, simulations, audio/visual experiences and other time-based behavior.
 
@@ -297,7 +304,7 @@ The current experimental evaluator handles deterministic numeric interpolation, 
 
 Adapters advertise capabilities (target types, easing, clock precision, audio/video, background execution and lifecycle). Missing capabilities produce diagnostics or an explicitly declared fallback; they must not silently alter timing semantics. Disposed targets cancel or detach their tracks. Untrusted timelines have configurable limits for duration, tracks, keyframes, recursion and event frequency.
 
-## 11. Unified compiler model
+## 12. Unified compiler model
 
 Pipeline:
 
@@ -311,7 +318,7 @@ Pipeline:
 
 SCRIPTS controls timelines through typed operations such as play, pause, seek and cancel. TIME calls SCRIPTS only through declared event bindings. This keeps side effects explicit and avoids circular evaluation.
 
-## 12. Complete five-part single-page specimen
+## 13. Complete five-part single-page specimen
 
 This is the target design specimen, not a claim that every construct is currently executable.
 
@@ -394,7 +401,7 @@ bundle WelcomeApp
                 @welcomeFinished
 ```
 
-## 13. Conformance and implementation status
+## 14. Conformance and implementation status
 
 This specification is the target contract, not a statement that all features exist today.
 
@@ -405,9 +412,12 @@ This specification is the target contract, not a statement that all features exi
 | Dynamic assignment and safe expressions | Required | Implemented subset |
 | Functions and returns | Required | Implemented subset |
 | Conditionals and loops | Required | Planned |
-| Five-part semantic bundle | Required | Flexible section order, mixed-case section keywords, equals validation for GUIDE/KIT and section-aware application IR; deeper section semantics remain staged |\n| Platform/device routing | Required | Initial global and component route compiler with fallback, device class, width, input and capability matching |\n| PICKER host selection | Required | Initial React/Python/Android/iOS native block filtering; no source-preserving packaging or execution |\n| Developer tooling | Required | CLI checks and diagnostics; editor language server, formatter and debugger remain planned |\n| (existing) Five-part semantic bundle | Required | wrapper/section validation and versioned application IR; deeper section semantics remain staged |
-| Timeline syntax and timeline model | Required | Experimental numeric timelines/scenes/tracks/keyframes; serialized separately from application IR |
-| Portable timeline evaluator | Required | Implemented experimental numeric subset with integer-microsecond evaluation and bounded playback modes |
+| Five-part bundle | Required | Flexible source order, mixed-case section keywords, GUIDE/KIT equals validation and section-aware application IR |
+| Platform/device routing | Required | Initial global and component route compiler with fallback, device class, width, input and capability matching |
+| PICKER host selection | Required | Initial React/Python/Android/iOS native block filtering; no source-preserving packaging or execution |
+| Developer tooling | Required | CLI checks and diagnostics; editor language server, formatter and debugger remain planned |
+| Timeline syntax and model | Required | Experimental numeric timelines/scenes/tracks/keyframes; serialized separately from application IR |
+| Portable timeline evaluator | Required | Experimental numeric subset with integer-microsecond evaluation and bounded playback modes |
 | React/native timeline adapters | Required | React renders KIT/PAGES; TIME playback adapters are not implemented |
 | Capability negotiation | Required | Planned |
 
