@@ -1,5 +1,6 @@
 from cudl.parser import parse
-from cudl.routing import (DeviceContext, compile_component_routes, compile_global_routes, merge_route_tables, resolve_component_route)
+from cudl.bundle import parse_bundle
+from cudl.routing import (DeviceContext, compile_application_routes, compile_component_routes, compile_global_routes, merge_route_tables, resolve_component_route)
 
 
 def _routes(source):
@@ -127,3 +128,23 @@ def test_global_route_map_uses_default_for_unlisted_platform():
     routes = compile_global_routes(guide.document.nodes[0].children)
     result = resolve_component_route("Header", routes.routes, DeviceContext("ios", "tablet"))
     assert result.implementation == "UniversalHeader"
+
+
+def test_compiles_global_and_local_routes_from_complete_application():
+    parsed = parse_bundle(
+        "GUIDE\n"
+        "    route = android\n"
+        "        component = Header\n"
+        "        use = GlobalHeader\n"
+        "KIT\n"
+        "    component Header\n"
+        "        route = android\n"
+        "            use = LocalHeader\n"
+        "PAGES\n"
+        "    page Home\n"
+    )
+    assert not parsed.has_errors
+    result = compile_application_routes(parsed.bundle)
+    assert not result.diagnostics
+    resolution = resolve_component_route("Header", result.routes, DeviceContext("android"))
+    assert resolution.implementation == "LocalHeader"
