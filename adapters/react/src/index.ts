@@ -271,7 +271,7 @@ function selectRouteImplementation(
         widthSpecificity: minRaw !== undefined || maxRaw !== undefined ? 1 : 0,
         inputSpecificity: input ? 1 : 0,
         capabilitySpecificity: required.length,
-        priority,
+        priority: priority + (local ? 0 : 0),
         local,
         order,
       });
@@ -321,8 +321,10 @@ function applyPlatformRoutes(
     }
     const key = implementation.toLowerCase();
     const targetDefinition = definitions.get(key);
-    if (targetDefinition) definitions.set(logicalName, targetDefinition);
-    else if (resolvedRegistry[key]) resolvedRegistry[logicalName] = resolvedRegistry[key];
+    if (targetDefinition) {
+      definitions.set(logicalName, targetDefinition);
+      delete resolvedRegistry[logicalName];
+    } else if (resolvedRegistry[key]) resolvedRegistry[logicalName] = resolvedRegistry[key];
     else {
       options.onDiagnostic?.({
         code: "CUDL4003",
