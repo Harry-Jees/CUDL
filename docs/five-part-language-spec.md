@@ -138,25 +138,6 @@ KIT
 
 Component properties are explicit inputs. Adapters map components to DOM nodes, native widgets or other host representations while preserving their contracts.
 
-## 9. PAGES
-
-PAGES describes screens and layout trees. Business logic belongs in SCRIPTS.
-
-```cudl
-PAGES
-    page Home
-        background soft.background
-        center
-            @WelcomeCard
-                heading = Welcome, Harry
-                subtitle = A little room to breathe
-            button Get Started
-                on click @start
-```
-
-Layout and interaction nodes lower to typed IR nodes. Unsupported essential behavior must produce diagnostics, not disappear silently.
-
-
 ## 7. Platform and device routing
 
 GUIDE may define a global route map, and individual KIT components may define
@@ -199,6 +180,26 @@ are retained for every host. Excluded native blocks are reported. Selection
 does not execute code, install dependencies, or guarantee that a runtime is
 available. Native source-preserving extraction and full bundle packaging are
 still staged.
+
+
+## 9. PAGES
+
+PAGES describes screens and layout trees. Business logic belongs in SCRIPTS.
+
+```cudl
+PAGES
+    page Home
+        background soft.background
+        center
+            @WelcomeCard
+                heading = Welcome, Harry
+                subtitle = A little room to breathe
+            button Get Started
+                on click @start
+```
+
+Layout and interaction nodes lower to typed IR nodes. Unsupported essential behavior must produce diagnostics, not disappear silently.
+
 
 ## 10. SCRIPTS
 
