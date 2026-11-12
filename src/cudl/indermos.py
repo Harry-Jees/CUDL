@@ -70,11 +70,15 @@ class StackAnalysis:
 
 
 def _normal_files(files: Mapping[str, str]) -> dict[str, str]:
-    return {
-        posixpath.normpath(path.replace("\\", "/")).lstrip("./"): content
-        for path, content in files.items()
-    }
-
+    normalized: dict[str, str] = {}
+    for path, content in files.items():
+        key = posixpath.normpath(path.replace("\\", "/"))
+        if key in {"", ".", ".."} or key.startswith("../") or key.startswith("/"):
+            raise ValueError(f"Project path escapes the supplied root: {path!r}")
+        if key.startswith("./"):
+            key = key[2:]
+        normalized[key] = content
+    return normalized
 
 def _add_stack(found: dict[str, HostStack], stack: HostStack) -> None:
     current = found.get(stack.name)
