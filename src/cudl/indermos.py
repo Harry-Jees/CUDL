@@ -36,6 +36,7 @@ class StackAnalysis:
     stacks: list[HostStack] = field(default_factory=list)
     dependencies: list[DeclaredDependency] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    module_graph: dict[str, object] | None = None
 
     @property
     def primary(self) -> HostStack | None:
@@ -66,6 +67,7 @@ class StackAnalysis:
                 for item in self.dependencies
             ],
             "warnings": list(self.warnings),
+            "module_graph": self.module_graph,
         }
 
 
@@ -181,6 +183,7 @@ def analyze_project(files: Mapping[str, str], entry: str | None = None) -> Stack
     found: dict[str, HostStack] = {}
     dependencies: list[DeclaredDependency] = []
     warnings: list[str] = []
+    module_graph: dict[str, object] | None = None
 
     for path, content in sorted(normalized.items()):
         name = posixpath.basename(path).casefold()
@@ -215,14 +218,54 @@ def analyze_project(files: Mapping[str, str], entry: str | None = None) -> Stack
             _add_stack(found, HostStack("dotnet", "csharp", path, ("C# project file",), 0.95))
         elif name == "cmakelists.txt":
             _add_stack(found, HostStack("cmake", "c/c++", path, ("CMakeLists.txt",), 0.8))
+        elif name.endswith(".cudl"):
+            from .bundle import parse_bundle
+            parsed = parse_bundle(content, source=path)
+            if not parsed.has_errors:
+                guide = parsed.bundle.sections.get("guide", [])
+                for node in guide:
+                    if node.kind.casefold() not in {"target", "targets"}:
+                        continue
+                    raw = node.value.strip()
+                    if raw.startswith("="):
+                        raw = raw[1:].strip()
+                    raw = raw.strip("[]")
+                    profiles = {
+                        "react": ("react", "javascript"),
+                        "react-native": ("react-native", "javascript"),
+                        "web": ("web", "javascript"),
+                        "python": ("python", "python"),
+                        "android": ("android", "kotlin/java"),
+                        "ios": ("ios", "swift"),
+                    }
+                    for part in raw.split(","):
+                        target = part.strip().strip(chr(34) + chr(39)).casefold()
+                        if target in profiles:
+                            stack_name, language = profiles[target]
+                            _add_stack(found, HostStack(
+                                stack_name, language, path,
+                                ("explicit CUDL GUIDE target",), 1.0,
+                            ))
 
     ordered = sorted(found.values(), key=lambda item: (-item.confidence, item.name))
     unique_dependencies: dict[tuple[str, str, str | None], DeclaredDependency] = {}
     for item in dependencies:
         unique_dependencies.setdefault((item.ecosystem, item.name.casefold(), item.version), item)
 
+    versions: dict[tuple[str, str], set[str]] = {}
+    for item in unique_dependencies.values():
+        if item.version:
+            versions.setdefault((item.ecosystem, item.name.casefold()), set()).add(item.version)
+    for (ecosystem, dependency_name), declared_versions in sorted(versions.items()):
+        if len(declared_versions) > 1:
+            warnings.append(
+                f"Conflicting declared versions for {ecosystem} dependency {dependency_name}: "
+                + ", ".join(sorted(declared_versions))
+            )
+
     if entry is not None:
         graph = resolve_project(normalized, entry)
+        module_graph = graph.to_dict()
         warnings.extend(
             f"{item.code}: {item.message}"
             for item in graph.diagnostics
@@ -232,4 +275,5 @@ def analyze_project(files: Mapping[str, str], entry: str | None = None) -> Stack
         stacks=ordered,
         dependencies=list(unique_dependencies.values()),
         warnings=warnings,
+        module_graph=module_graph,
     )
