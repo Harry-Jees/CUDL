@@ -220,10 +220,9 @@ def merge_route_tables(
     component_routes: dict[str, list[ComponentRoute]],
 ) -> dict[str, list[ComponentRoute]]:
     """Merge global and local routes; local declarations win equal matches."""
-    from dataclasses import replace
-
     merged = {name: list(items) for name, items in global_routes.items()}
     for name, items in component_routes.items():
-        merged.setdefault(name, [])
-        merged[name].extend(replace(item, priority=item.priority + 1_000_000) for item in items)
+        # Local routes are placed first so stable tie-breaking prefers them,
+        # while an explicitly higher priority still wins.
+        merged[name] = list(items) + merged.get(name, [])
     return merged
