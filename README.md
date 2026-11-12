@@ -44,8 +44,8 @@ script
 CUDL's planned host-integration toolchain has two cooperating services:
 
 - **INDERMOS** — Intelligent Dependency Resolver and Module Ordering System.
-  It identifies the host stack, resolves local and external dependencies,
-  orders modules, checks adapter compatibility and reports actionable errors.
+  It identifies host stacks from supplied manifests, inspects declared dependencies,
+  resolves local CUDL modules, orders them and reports actionable diagnostics.
 - **PICKER** — Platform Intelligent CUDL Kit Exchange Router. The
   `cudl_picker` package selects compatible KIT components and native script
   blocks for the host stack, then prepares a portable, native-convertible
@@ -57,7 +57,7 @@ those results to filter and package content. Their architecture, proposed APIs,
 safety boundaries and implementation stages are specified in
 [`docs/indermos-picker-toolchain.md`](docs/indermos-picker-toolchain.md).
 
-**Status:** the repository has local module resolution and dependency-first ordering, component-level and GUIDE-level device routing, and an initial PICKER selector for declared React, Python, Android and iOS host profiles. Full host-stack identification, third-party package resolution, source-preserving native blocks, generated platform bundles and production host adapters remain unfinished.
+**Status:** the repository has local module resolution and dependency-first ordering, component-level and GUIDE-level device routing, and an initial PICKER selector for declared React, Python, Android and iOS host profiles. Full transitive/registry dependency resolution, automatic device detection, generated platform bundles and production host adapters remain unfinished.
 
 ## Current status
 
