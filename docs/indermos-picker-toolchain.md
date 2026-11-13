@@ -162,9 +162,7 @@ C++.
 - `map_components(ir, adapter_capabilities) -> ComponentPlan`
 - `package(selection_plan, resolution_plan) -> PortableBundle`
 
-The CLI may later expose `cudl inspect-stack`, `cudl resolve --dry-run`,
-`cudl picker --target <host>` and `cudl bundle --target <host>`. These commands are proposals,
-not current CLI features.
+The current CLI exposes `cudl picker --host <host>` and accepts repeated `--host` flags for independent previews. Future commands may add stack inspection, dependency dry-runs and portable target bundle generation; those capabilities are not implied by the preview command.
 
 ## Native blocks and JSON contract
 
@@ -229,8 +227,13 @@ must be parsed as data (with duplicate-key and size limits), never executed.
 ## Current implementation boundary
 
 The repository currently has a basic local CUDL module resolver and dependency-first graph
-ordering. It does not yet detect complete host stacks, resolve third-party packages, execute
-host-language blocks, filter scripts by target, or produce PICKER bundles. The current runtime
-does not implement a standalone garbage collector or full general-purpose control flow.
+ordering. The CLI can preview host-aware SCRIPTS selections for the declared React, React Native,
+web, Node, Python, Android and iOS profiles; repeated `--host` flags produce independent
+selections from the same source. Known but incompatible languages are listed as excluded, while
+unknown language blocks remain in source/IR, are excluded and produce a warning. Selection is
+non-executing: no native code runs, no package is installed and no portable PICKER bundle is
+produced. Complete host-stack detection, third-party dependency resolution, component mapping,
+portable packaging and production adapters remain unimplemented. The current runtime does not
+implement a standalone garbage collector or full general-purpose control flow.
 Maintain this distinction in README, CLI help and release notes until each capability is
 implemented and verified.
