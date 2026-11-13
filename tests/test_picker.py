@@ -97,9 +97,9 @@ def test_picker_cli_fails_closed_for_unknown_host(tmp_path, monkeypatch, capsys)
 
 def test_picker_preserves_unknown_languages_as_unsupported():
     parsed = parse_bundle(
-        "SCRIPTS\\n"
-        "    brainfuck\\n"
-        "        +++[>+++<-]\\n"
+        "SCRIPTS\n"
+        "    brainfuck\n"
+        "        +++[>+++<-]\n"
     )
     assert not parsed.has_errors
 
@@ -117,15 +117,15 @@ def test_picker_cli_builds_independent_multi_host_previews_and_reports_unknowns(
 ):
     source = tmp_path / "multi-host.cudl"
     source.write_text(
-        "GUIDE\\n"
-        "    name = MultiHost\\n"
-        "SCRIPTS\\n"
-        "    javascript\\n"
-        "        console.log('web');\\n"
-        "    python\\n"
-        "        print('python host');\\n"
-        "    brainfuck\\n"
-        "        +++[>+++<-]\\n",
+        "GUIDE\n"
+        "    name = MultiHost\n"
+        "SCRIPTS\n"
+        "    javascript\n"
+        "        console.log('web');\n"
+        "    python\n"
+        "        print('python host');\n"
+        "    brainfuck\n"
+        "        +++[>+++<-]\n",
         encoding="utf-8",
     )
     monkeypatch.setattr(
@@ -148,9 +148,9 @@ def test_picker_cli_builds_independent_multi_host_previews_and_reports_unknowns(
 def test_picker_cli_reports_unsupported_language_warning(tmp_path, monkeypatch, capsys):
     source = tmp_path / "unknown.cudl"
     source.write_text(
-        "SCRIPTS\\n"
-        "    brainfuck\\n"
-        "        +++[>+++<-]\\n",
+        "SCRIPTS\n"
+        "    brainfuck\n"
+        "        +++[>+++<-]\n",
         encoding="utf-8",
     )
     monkeypatch.setattr(
