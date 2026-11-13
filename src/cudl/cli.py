@@ -14,7 +14,7 @@ from .runtime import CUDLRuntimeError, run_script
 from .bundle import lower_bundle, parse_bundle
 from .time import compile_time
 from .routing import DeviceContext, compile_component_routes, resolve_component_route
-from .picker import filter_scripts
+from .picker import filter_scripts_for_hosts
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -41,7 +41,7 @@ def _parser() -> argparse.ArgumentParser:
     routes.add_argument("--capability", action="append", default=[])
     picker = commands.add_parser("picker", help="Preview native script blocks selected for a host.")
     picker.add_argument("file", type=Path)
-    picker.add_argument("--host", required=True, help="Declared host profile, such as react, python, android, or ios.")
+    picker.add_argument("--host", action="append", required=True, help="Declared host profile; repeat for independent multi-host previews.")
     picker.add_argument("--extra-language", action="append", default=[], help="Additional native language supported by the host; may be repeated.")
     graph = commands.add_parser("graph", help="Resolve project imports and print the module graph.")
     graph.add_argument("project", type=Path)
@@ -80,13 +80,28 @@ def main() -> int:
         if result.has_errors:
             return 1
         try:
-            selection = filter_scripts(
-                result.bundle.sections.get("scripts", []), args.host, args.extra_language
+            extra_languages = {host.strip().casefold(): args.extra_language for host in args.host}
+            selections = filter_scripts_for_hosts(
+                result.bundle.sections.get("scripts", []), args.host, extra_languages
             )
         except ValueError as exc:
             print(f"{args.file}: error CUDL7001: {exc}", file=sys.stderr)
             return 2
-        print(json.dumps(selection.to_dict(), indent=2))
+        for selection in selections.values():
+            for language, line in selection.unsupported:
+                print(
+                    f"{args.file}:{line}: warning CUDL7002: unsupported script language {language!r} was excluded.",
+                    file=sys.stderr,
+                )
+        if len(selections) == 1:
+            payload = next(iter(selections.values())).to_dict()
+        else:
+            payload = {
+                "type": "CUDLMultiHostPickerSelection",
+                "version": 1,
+                "selections": [selection.to_dict() for selection in selections.values()],
+            }
+        print(json.dumps(payload, indent=2))
         return 0
 
     if args.command == "routes":

@@ -34,6 +34,7 @@ class PickerSelection:
     host: str
     selected: tuple[Node, ...]
     excluded: tuple[tuple[str, int], ...]
+    unsupported: tuple[tuple[str, int], ...] = ()
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -47,6 +48,10 @@ class PickerSelection:
             "excluded": [
                 {"language": language, "line": line}
                 for language, line in self.excluded
+            ],
+            "unsupported": [
+                {"language": language, "line": line}
+                for language, line in self.unsupported
             ],
         }
 
@@ -71,15 +76,17 @@ def filter_scripts(
     supported = host_languages(host, extra_languages)
     selected: list[Node] = []
     excluded: list[tuple[str, int]] = []
+    unsupported: list[tuple[str, int]] = []
     for node in nodes:
         language = _LANGUAGE_ALIASES.get(node.kind.casefold())
         if language is None:
+            unsupported.append((node.kind.casefold(), node.line))
             continue
         if language in {"cudl", "json"} or language in supported:
             selected.append(node)
         else:
             excluded.append((node.kind.casefold(), node.line))
-    return PickerSelection(host.casefold(), tuple(selected), tuple(excluded))
+    return PickerSelection(host.strip().casefold(), tuple(selected), tuple(excluded), tuple(unsupported))
 
 
 def filter_scripts_for_hosts(

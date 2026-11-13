@@ -60,7 +60,7 @@ safety boundaries and implementation stages are specified in
 **Status:** the repository currently has a basic local CUDL module resolver
 and dependency-first ordering. Full stack identification, third-party package resolution, and complete
 multi-host PICKER bundle generation are proposed work. Host-aware native
-script selection is implemented and available through `cudl picker`.
+script selection is implemented through `cudl picker`; repeat `--host` to preview separate outputs for multiple hosts. Unknown script languages are preserved in source/IR, excluded from selections and reported as warnings.
 
 ## Current status
 
@@ -71,8 +71,7 @@ React adapter with a first five-part application entry point. The five-part
 bundle validator accepts sections in any order and normalizes application IR.
 A pure device-aware KIT route selector and `cudl routes` preview command are
 implemented. Host-aware PICKER selection of compatible native script blocks
-is implemented and can be inspected with `cudl picker`; multi-host bundle
-packaging, platform rendering and adapter capability discovery remain staged. An experimental numeric TIME compiler and
+is implemented and can be inspected with `cudl picker`; repeated `--host` flags produce independent multi-host previews. Portable bundle packaging, platform rendering and adapter capability discovery remain staged. An experimental numeric TIME compiler and
 deterministic evaluator support bounded timeline, scene, track, keyframe,
 interpolation and playback-mode semantics; host rendering, event dispatch,
 non-numeric interpolation and production TIME adapters remain in development.
@@ -96,6 +95,7 @@ cudl run examples/hello.cudl
 cudl bundle examples/five-part-welcome.cudl
 cudl routes examples/hello-react-python.cudl --component Navigation --platform android --device phone
 cudl picker examples/hello-react-python.cudl --host react
+cudl picker examples/hello-react-python.cudl --host react --host python
 pytest
 ```
 

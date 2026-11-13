@@ -92,3 +92,72 @@ def test_picker_cli_fails_closed_for_unknown_host(tmp_path, monkeypatch, capsys)
 
     assert main() == 2
     assert "CUDL7001" in capsys.readouterr().err
+
+
+
+def test_picker_preserves_unknown_languages_as_unsupported():
+    parsed = parse_bundle(
+        "SCRIPTS\\n"
+        "    brainfuck\\n"
+        "        +++[>+++<-]\\n"
+    )
+    assert not parsed.has_errors
+
+    selection = filter_scripts(parsed.bundle.sections["scripts"], "react")
+
+    assert selection.selected == ()
+    assert selection.unsupported == (("brainfuck", 2),)
+    assert selection.to_dict()["unsupported"] == [
+        {"language": "brainfuck", "line": 2}
+    ]
+
+
+def test_picker_cli_builds_independent_multi_host_previews_and_reports_unknowns(
+    tmp_path, monkeypatch, capsys
+):
+    source = tmp_path / "multi-host.cudl"
+    source.write_text(
+        "GUIDE\\n"
+        "    name = MultiHost\\n"
+        "SCRIPTS\\n"
+        "    javascript\\n"
+        "        console.log('web');\\n"
+        "    python\\n"
+        "        print('python host');\\n"
+        "    brainfuck\\n"
+        "        +++[>+++<-]\\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        ["cudl", "picker", str(source), "--host", "react", "--host", "python"],
+    )
+
+    assert main() == 0
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert "CUDL7002" in captured.err
+
+    assert payload["type"] == "CUDLMultiHostPickerSelection"
+    assert [item["host"] for item in payload["selections"]] == ["react", "python"]
+    assert [item["language"] for item in payload["selections"][0]["selected"]] == ["javascript"]
+    assert [item["language"] for item in payload["selections"][1]["selected"]] == ["python"]
+    assert payload["selections"][0]["unsupported"][0]["language"] == "brainfuck"
+
+
+def test_picker_cli_reports_unsupported_language_warning(tmp_path, monkeypatch, capsys):
+    source = tmp_path / "unknown.cudl"
+    source.write_text(
+        "SCRIPTS\\n"
+        "    brainfuck\\n"
+        "        +++[>+++<-]\\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "sys.argv", ["cudl", "picker", str(source), "--host", "react"]
+    )
+
+    assert main() == 0
+    captured = capsys.readouterr()
+    assert "CUDL7002" in captured.err
+    assert "brainfuck" in captured.err
