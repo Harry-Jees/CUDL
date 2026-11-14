@@ -55,3 +55,36 @@ def test_rejects_unclosed_string():
 def test_rejects_indentation_jump():
     with pytest.raises(LexError, match="Unexpected indentation"):
         tokenize("page Home\n        title jump")
+
+
+
+def test_tokenizer_rejects_source_over_resource_limit(monkeypatch):
+    import cudl.lexer as lexer_module
+
+    monkeypatch.setattr(lexer_module, "MAX_SOURCE_CHARACTERS", 4)
+    with pytest.raises(LexError, match="Source exceeds"):
+        tokenize("page Home")
+
+
+def test_tokenizer_rejects_oversized_lines(monkeypatch):
+    import cudl.lexer as lexer_module
+
+    monkeypatch.setattr(lexer_module, "MAX_LINE_CHARACTERS", 4)
+    with pytest.raises(LexError, match="Line exceeds"):
+        tokenize("page Home")
+
+
+def test_tokenizer_rejects_excessive_nesting(monkeypatch):
+    import cudl.lexer as lexer_module
+
+    monkeypatch.setattr(lexer_module, "MAX_NESTING_LEVEL", 1)
+    with pytest.raises(LexError, match="Nesting exceeds"):
+        tokenize("page Home\n    title Child\n        text TooDeep")
+
+
+def test_tokenizer_stops_at_token_limit(monkeypatch):
+    import cudl.lexer as lexer_module
+
+    monkeypatch.setattr(lexer_module, "MAX_TOKENS", 4)
+    with pytest.raises(LexError, match="Token count exceeds"):
+        tokenize("one two three")

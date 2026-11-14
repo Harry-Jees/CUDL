@@ -230,3 +230,13 @@ timing and interpolation semantics.
 
 The goal is not to remove every symbol. Each symbol should have one obvious
 purpose and should not be required when indentation or plain words are clearer.
+
+
+## 11. Bounded parsing
+
+The reference lexer and parser apply conservative resource limits before building
+large syntax structures: source size, individual line length, indentation depth,
+node count and token count are bounded. Exceeding a parser limit produces a
+source diagnostic; exceeding a lexer limit raises a location-aware lexical
+error. These limits are safety guards, not syntax restrictions on ordinary
+CUDL programs. Large applications should be split into smaller modules.

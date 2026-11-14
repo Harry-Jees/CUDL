@@ -10,6 +10,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
+from .limits import MAX_LINE_CHARACTERS, MAX_NESTING_LEVEL, MAX_SOURCE_CHARACTERS, MAX_TOKENS
+
 
 class TokenKind(str, Enum):
     INDENT = "INDENT"
@@ -75,13 +77,23 @@ def tokenize(source: str) -> list[Token]:
     """Convert CUDL source into tokens, including indentation structure.
 
     Double hash starts a comment. A single hash is a variable marker and is
-    emitted as a HASH token.
+    emitted as a HASH token. Resource limits keep untrusted input bounded.
     """
+    if len(source) > MAX_SOURCE_CHARACTERS:
+        raise LexError(f"Source exceeds the {MAX_SOURCE_CHARACTERS}-character safety limit.", 1, 1)
+
     tokens: list[Token] = []
     indents = [0]
     lines = source.splitlines()
 
+    def emit(token: Token) -> None:
+        if len(tokens) >= MAX_TOKENS:
+            raise LexError(f"Token count exceeds the {MAX_TOKENS}-token safety limit.", token.line, token.column)
+        tokens.append(token)
+
     for line_no, raw in enumerate(lines, start=1):
+        if len(raw) > MAX_LINE_CHARACTERS:
+            raise LexError(f"Line exceeds the {MAX_LINE_CHARACTERS}-character safety limit.", line_no, MAX_LINE_CHARACTERS + 1)
         if not raw.strip() or raw.lstrip().startswith("##"):
             continue
 
@@ -90,6 +102,8 @@ def tokenize(source: str) -> list[Token]:
             raise LexError("Tabs are not allowed for indentation; use spaces.", line_no, 1)
 
         width = len(prefix)
+        if width // 4 > MAX_NESTING_LEVEL:
+            raise LexError(f"Nesting exceeds the {MAX_NESTING_LEVEL}-level safety limit.", line_no, 1)
         if width % 4:
             raise LexError("Indentation must use multiples of four spaces.", line_no, 1)
 
