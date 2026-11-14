@@ -70,3 +70,46 @@ def test_rejects_invalid_hash_variable_statements():
         result = parse(source)
         assert result.has_errors
         assert result.diagnostics[0].code == "CUDL1004"
+
+
+
+def test_parser_rejects_source_over_resource_limit(monkeypatch):
+    import cudl.parser as parser_module
+
+    monkeypatch.setattr(parser_module, "MAX_SOURCE_CHARACTERS", 4)
+    result = parse("page Home")
+
+    assert result.has_errors
+    assert result.diagnostics[0].code == "CUDL1005"
+    assert result.document.nodes == []
+
+
+def test_parser_rejects_oversized_lines(monkeypatch):
+    import cudl.parser as parser_module
+
+    monkeypatch.setattr(parser_module, "MAX_LINE_CHARACTERS", 8)
+    result = parse("page TooLong")
+
+    assert result.has_errors
+    assert result.diagnostics[0].code == "CUDL1006"
+
+
+def test_parser_rejects_excessive_nesting(monkeypatch):
+    import cudl.parser as parser_module
+
+    monkeypatch.setattr(parser_module, "MAX_NESTING_LEVEL", 1)
+    result = parse("page Home\n    title Child\n        text TooDeep")
+
+    assert result.has_errors
+    assert any(item.code == "CUDL1007" for item in result.diagnostics)
+
+
+def test_parser_stops_after_node_limit(monkeypatch):
+    import cudl.parser as parser_module
+
+    monkeypatch.setattr(parser_module, "MAX_NODES", 2)
+    result = parse("first\nsecond\nthird")
+
+    assert result.has_errors
+    assert len(result.document.nodes) == 2
+    assert result.diagnostics[-1].code == "CUDL1008"

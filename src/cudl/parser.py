@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 import re
 
 from .diagnostics import Diagnostic, Severity
+from .limits import MAX_LINE_CHARACTERS, MAX_NESTING_LEVEL, MAX_NODES, MAX_SOURCE_CHARACTERS
 
 
 @dataclass(slots=True)
@@ -104,12 +105,27 @@ def parse(text: str, source: str | None = None) -> ParseResult:
     beginning with double hash are ignored. A single hash starts a variable
     declaration/reference and is never treated as a comment.
     """
+    if len(text) > MAX_SOURCE_CHARACTERS:
+        return ParseResult(
+            document=Document(nodes=[], source=source),
+            diagnostics=[Diagnostic(
+                code="CUDL1005",
+                message=f"Source exceeds the {MAX_SOURCE_CHARACTERS}-character safety limit.",
+                severity=Severity.ERROR,
+                line=1,
+                column=1,
+                source=source,
+                suggestion="Split the source into smaller CUDL modules.",
+            )],
+        )
+
     roots: list[Node] = []
     diagnostics: list[Diagnostic] = []
     stack: list[tuple[int, Node]] = []
     native_node: Node | None = None
     native_indent: int | None = None
     native_lines: list[str] = []
+    node_count = 0
 
     def finish_native_block() -> None:
         nonlocal native_node, native_indent, native_lines
@@ -120,6 +136,19 @@ def parse(text: str, source: str | None = None) -> ParseResult:
         native_lines = []
 
     for line_number, raw in enumerate(text.splitlines(), start=1):
+        if len(raw) > MAX_LINE_CHARACTERS:
+            finish_native_block()
+            diagnostics.append(Diagnostic(
+                code="CUDL1006",
+                message=f"Line exceeds the {MAX_LINE_CHARACTERS}-character safety limit.",
+                severity=Severity.ERROR,
+                line=line_number,
+                column=MAX_LINE_CHARACTERS + 1,
+                source=source,
+                suggestion="Split long text or native code across multiple indented lines.",
+            ))
+            continue
+
         if native_node is not None:
             leading_native = raw[: len(raw) - len(raw.lstrip(" "))]
             native_width = len(leading_native)
@@ -160,6 +189,17 @@ def parse(text: str, source: str | None = None) -> ParseResult:
                 suggestion="Align this statement to a four-space indentation level.",
             ))
             continue
+        if indent // 4 > MAX_NESTING_LEVEL:
+            diagnostics.append(Diagnostic(
+                code="CUDL1007",
+                message=f"Nesting exceeds the {MAX_NESTING_LEVEL}-level safety limit.",
+                severity=Severity.ERROR,
+                line=line_number,
+                column=1,
+                source=source,
+                suggestion="Flatten deeply nested content or split it into smaller components.",
+            ))
+            continue
 
         statement = _strip_comment(raw[indent:])
         if not statement:
@@ -176,6 +216,19 @@ def parse(text: str, source: str | None = None) -> ParseResult:
                 suggestion="Use: #name = value",
             ))
             continue
+
+        if node_count >= MAX_NODES:
+            diagnostics.append(Diagnostic(
+                code="CUDL1008",
+                message=f"Document exceeds the {MAX_NODES}-node safety limit.",
+                severity=Severity.ERROR,
+                line=line_number,
+                column=indent + 1,
+                source=source,
+                suggestion="Split the application into smaller CUDL modules.",
+            ))
+            break
+        node_count += 1
 
         kind, value = _split_statement(statement)
         node = Node(kind=kind, value=value, line=line_number)
