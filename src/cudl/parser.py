@@ -193,7 +193,7 @@ def parse(text: str, source: str | None = None) -> ParseResult:
                 column=1,
                 source=source,
                 suggestion="Align this statement to a four-space indentation level.",
-                end_column=indent + 2,
+                end_column=indent + 1,
                 line_text=raw,
             ))
             continue
