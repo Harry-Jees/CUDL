@@ -79,7 +79,7 @@ def test_ir_round_trip_preserves_order_values_and_native_source():
 
 
 def test_ir_deserializer_rejects_unknown_versions_and_invalid_provenance():
-    payload = lower(parse("page Home")).to_dict()
+    payload = lower(parse("page Home").document).to_dict()
     unsupported = copy.deepcopy(payload)
     unsupported["version"] = 2
     with pytest.raises(IRValidationError, match="Unsupported CUDL IR version"):
@@ -92,7 +92,7 @@ def test_ir_deserializer_rejects_unknown_versions_and_invalid_provenance():
 
 
 def test_ir_deserializer_enforces_node_and_nesting_limits(monkeypatch):
-    payload = lower(parse("page Home\n    header\n        text Hello")).to_dict()
+    payload = lower(parse("page Home\n    header\n        text Hello").document).to_dict()
 
     monkeypatch.setattr("cudl.ir.MAX_NODES", 2)
     with pytest.raises(IRValidationError, match="node safety limit"):
