@@ -6,7 +6,7 @@ from .time import Keyframe, Scene, TimeCompileError, TimeCompileResult, Timeline
 from .expressions import Expression, ExpressionError, parse_expression, resolve_path
 from .components import ComponentDefinition, ComponentProperty, ComponentRegistry, build_component_registry
 from .lexer import LexError, Token, TokenKind, tokenize
-from .ir import IRDocument, IRNode, lower
+from .ir import IRDocument, IRNode, IRValidationError, lower
 from .modules import ImportBinding, ImportSpec, ModuleGraph, parse_import, resolve_project
 from .parser import Document, Node, ParseResult, parse
 from .picker import PickerSelection, filter_scripts, filter_scripts_for_hosts, host_languages
@@ -23,7 +23,7 @@ __all__ = [
     "CUDLRuntimeError", "RuntimeResult", "run_script", "Expression",
     "ExpressionError", "parse_expression", "resolve_path", "ComponentDefinition",
     "ComponentProperty", "ComponentRegistry", "build_component_registry",
-    "Document", "LexError", "IRDocument", "IRNode", "ImportBinding",
+    "Document", "LexError", "IRDocument", "IRNode", "IRValidationError", "ImportBinding",
     "ImportSpec", "ModuleGraph", "Node", "ParseResult", "Severity", "Token",
     "TokenKind", "lower", "parse", "parse_import", "resolve_project",
     "tokenize", "PickerSelection", "filter_scripts", "filter_scripts_for_hosts", "host_languages",
