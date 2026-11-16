@@ -126,7 +126,7 @@ def test_diagnostic_includes_source_span_and_line_context():
     assert payload["column"] == 1
     assert payload["end_column"] == 3
     assert payload["line_text"] == "  title Bad indent"
-    assert "sample.cudl:2:3: error CUDL1002" in diagnostic.format()
+    assert "sample.cudl:2:1: error CUDL1002" in diagnostic.format()
     assert "^^" in diagnostic.format()
     assert "help:" in diagnostic.format()
 
