@@ -1,0 +1,106 @@
+## One CUDL application, with a React frontend and Python host/backend.
+## This is a design specimen: native block execution and UI event wiring depend
+## on configured host adapters and are not claimed by the current prototype.
+
+GUIDE
+    name = HelloSwitch
+    version = 0.1
+    targets = [web, android]
+    hosts = [react, python]
+    routing = automatic
+    default-device = responsive
+
+KIT
+    theme = light-brown
+        background = #F5F0E8
+        foreground = #292521
+        accent = #B98B68
+        surface = #FFF9F1
+        radius = 18
+
+    component GreetingCard
+        property greeting
+        card
+            title greeting
+
+    component AndroidPhoneNavigation
+        row
+            text Home
+            text Discover
+            text Settings
+
+    component AndroidTabletNavigation
+        column
+            text Home
+            text Discover
+            text Settings
+
+    component WebNavigation
+        row
+            text Home
+            text Discover
+            text Settings
+
+    component ResponsiveNavigation
+        row
+            text Home
+            text Discover
+            text Settings
+
+    component Navigation
+        route = android
+            device = phone
+            use = AndroidPhoneNavigation
+
+        route = android
+            device = tablet
+            use = AndroidTabletNavigation
+
+        route = web
+            use = WebNavigation
+
+        route = default
+            use = ResponsiveNavigation
+
+PAGES
+    page Home
+        background = light-brown.background
+        center
+            @Navigation
+            @GreetingCard
+                greeting = Hello from CUDL
+            text #status
+            button Toggle theme
+                on click @toggleTheme
+
+SCRIPTS
+    #darkMode = false
+    #status = Light theme
+
+    @toggleTheme
+        #darkMode = not #darkMode
+        if #darkMode
+            #status = Dark theme
+        else
+            #status = Light theme
+
+    javascript
+        export const greeting = "Hello from React";
+
+    python
+        def greeting(name="World"):
+            return f"Hello, {name} from Python"
+
+TIME
+    timeline HelloEntrance
+        duration 600ms
+        clock relative
+        mode once
+        scene Welcome
+            at 0ms
+            duration 600ms
+            track Home.GreetingCard.opacity
+                from 0
+                to 1
+                duration 500ms
+                ease out-cubic

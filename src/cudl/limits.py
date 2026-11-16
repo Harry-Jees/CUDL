@@ -1,0 +1,7 @@
+"""Shared resource limits for safe CUDL front-end processing."""
+
+MAX_SOURCE_CHARACTERS = 1_000_000
+MAX_LINE_CHARACTERS = 16_384
+MAX_NESTING_LEVEL = 64
+MAX_NODES = 50_000
+MAX_TOKENS = 100_000
