@@ -1,9 +1,11 @@
 # CUDL five-part language specification
 
-Status: canonical design direction. The bundle validator, reference runtime,
-component registry and experimental numeric TIME evaluator are implemented in
-the development branch. Full platform adapters, native-block routing and
-capability negotiation remain staged.
+Status: canonical design direction. The normative punctuation, source-mode and
+value rules are maintained in [CANONICAL-SYNTAX.md](CANONICAL-SYNTAX.md).
+When examples here conflict with that contract, the contract wins. The bundle
+validator, reference runtime, component registry and experimental numeric TIME
+evaluator are implemented in the development branch. Full platform adapters,
+native-block routing and capability negotiation remain staged.
 
 CUDL (Creative Unified Design Language) is an embeddable, indentation-first
 language for application manifests, reusable UI, pages, program logic and
@@ -14,6 +16,8 @@ time-based experiences. The host application retains its runtime and lifecycle.
 A single `.cudl` file may contain all five peer sections. They may appear in
 any order, each at most once. Empty sections may be omitted. The compiler
 normalizes them to GUIDE, KIT, PAGES, SCRIPTS, TIME in the application IR.
+A host may also request a standalone source fragment; a fragment is not a
+complete five-part application.
 
 | Section | Responsibility |
 | --- | --- |
@@ -38,19 +42,20 @@ normalizes them to GUIDE, KIT, PAGES, SCRIPTS, TIME in the application IR.
 ## 3. Values, variables and operators
 
 ```cudl
-#name = Harry
-#age = 21
-#active = true
-#items = [red, green, blue]
-#profile = {name: Harry, age: 21}
-#first = #items[0]
-#displayName = #profile[name]
-#total = 100 + 50
+SCRIPTS
+    #name = Harry
+    #age = 21
+    #active = true
+    #items = [red, green, blue]
+    #first = #items[0]
+    #total = 100 + 50
 ```
 
 Values are dynamically typed. Reassignment may change type. `true`, `false`
-and `null` are typed literals. `const #name = value` declares an immutable
-binding. Indexing is bounds-checked and cannot access arbitrary host objects.
+and `null` are typed literals. Inline mapping literals and immutable
+declarations are design directions only until parser, runtime and conformance
+tests explicitly mark them implemented. Indexing is bounds-checked and cannot
+access arbitrary host objects.
 
 | Purpose | Operators |
 | --- | --- |
