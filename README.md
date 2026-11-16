@@ -21,6 +21,8 @@ A CUDL application is organized into five sections:
 The full syntax and architecture proposal, including a complete five-part
 single-page example and the portable TIME model, is documented in
 [`docs/five-part-language-spec.md`](docs/five-part-language-spec.md).
+The normative v1 punctuation, indentation, value and conformance decisions
+are recorded in [`docs/CANONICAL-SYNTAX.md`](docs/CANONICAL-SYNTAX.md).
 
 ## Syntax direction
 
@@ -29,7 +31,7 @@ CUDL is indentation-first and dynamically typed. It uses `#` for variables,
 to context. Ordinary text does not need quotes.
 
 ```cudl
-script
+SCRIPTS
     ## A small example
     #name = Harry
 
