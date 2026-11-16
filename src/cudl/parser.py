@@ -116,6 +116,8 @@ def parse(text: str, source: str | None = None) -> ParseResult:
                 column=1,
                 source=source,
                 suggestion="Split the source into smaller CUDL modules.",
+                end_column=2,
+                line_text=text.splitlines()[0] if text.splitlines() else "",
             )],
         )
 
@@ -146,6 +148,8 @@ def parse(text: str, source: str | None = None) -> ParseResult:
                 column=MAX_LINE_CHARACTERS + 1,
                 source=source,
                 suggestion="Split long text or native code across multiple indented lines.",
+                end_column=MAX_LINE_CHARACTERS + 2,
+                line_text=raw,
             ))
             continue
 
@@ -174,6 +178,8 @@ def parse(text: str, source: str | None = None) -> ParseResult:
                 column=1,
                 source=source,
                 suggestion="Replace indentation tabs with spaces.",
+                end_column=2,
+                line_text=raw,
             ))
             continue
 
@@ -187,6 +193,8 @@ def parse(text: str, source: str | None = None) -> ParseResult:
                 column=1,
                 source=source,
                 suggestion="Align this statement to a four-space indentation level.",
+                end_column=indent + 2,
+                line_text=raw,
             ))
             continue
         if indent // 4 > MAX_NESTING_LEVEL:
@@ -198,6 +206,8 @@ def parse(text: str, source: str | None = None) -> ParseResult:
                 column=1,
                 source=source,
                 suggestion="Flatten deeply nested content or split it into smaller components.",
+                end_column=indent + 2,
+                line_text=raw,
             ))
             continue
 
@@ -214,6 +224,8 @@ def parse(text: str, source: str | None = None) -> ParseResult:
                 column=indent + 1,
                 source=source,
                 suggestion="Use: #name = value",
+                end_column=indent + len(statement) + 1,
+                line_text=raw,
             ))
             continue
 
@@ -226,6 +238,8 @@ def parse(text: str, source: str | None = None) -> ParseResult:
                 column=indent + 1,
                 source=source,
                 suggestion="Split the application into smaller CUDL modules.",
+                end_column=indent + len(statement) + 1,
+                line_text=raw,
             ))
             break
         node_count += 1
@@ -246,6 +260,8 @@ def parse(text: str, source: str | None = None) -> ParseResult:
                 column=indent + 1,
                 source=source,
                 suggestion="Indent nested statements by exactly four spaces.",
+                end_column=indent + 2,
+                line_text=raw,
             ))
             indent = expected_indent
 
