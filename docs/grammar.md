@@ -1,7 +1,10 @@
 # CUDL syntax — beginner-first draft
 
-This document defines the current syntax direction. Examples marked as planned
-are specifications, not claims that every adapter already executes them.
+The normative v1 syntax decisions live in [CANONICAL-SYNTAX.md](CANONICAL-SYNTAX.md).
+This document provides explanatory examples; if wording or examples here
+conflict with the canonical contract, the canonical contract wins. Examples
+marked as planned are specifications, not claims that every adapter executes
+them.
 
 ## 1. Blocks, names and indentation
 
@@ -14,6 +17,8 @@ are specifications, not claims that every adapter already executes them.
   case-insensitive for portability.
 - A nested block is indented exactly one level beneath its parent.
 - The five peer sections may appear in any order, at most once each.
+- A standalone page/script/component fragment is valid only when the host
+  explicitly requests fragment parsing; it is not a complete app bundle.
 
 ```cudl
 GUIDE
@@ -29,7 +34,7 @@ PAGES
 ```
 
 Ordinary text values do not need quotes. Quotes remain available when escaping
-or unambiguous special characters are needed.
+or preserving special text.
 
 ## 2. Assignments and values
 
@@ -37,10 +42,13 @@ Use one consistent assignment form in configuration, themes, component
 properties and variables:
 
 ```cudl
-name = HelloApp
-background = #F5F0E8
-radius = 18
-#active = true
+GUIDE
+    name = HelloApp
+    background = #F5F0E8
+    radius = 18
+
+SCRIPTS
+    #active = true
 ```
 
 The equals sign separates a name from its value. Structural declarations such
@@ -48,15 +56,14 @@ as `page Home`, `component Card` and `route = android` introduce blocks;
 their nested properties use assignments.
 
 Values are dynamically typed. Numbers, booleans and null retain their types.
-Ordinary words and phrases are text. Lists use square brackets; mappings use
-curly braces only as inline values, not as block delimiters.
+Ordinary words and phrases are text. Lists use square brackets. Inline mapping
+syntax is a design direction only until the parser/runtime and conformance
+tests explicitly mark it implemented.
 
 ```cudl
-#people = [Harry, Ada, Lin]
-#profile = {name: Harry, age: 21}
-#first = #people[0]
-#person = #profile[name]
-#displayName = #data.users[0].profile[name]
+SCRIPTS
+    #people = [Harry, Ada, Lin]
+    #first = #people[0]
 ```
 
 Variables are dynamically typed; a later assignment may change the value's
@@ -78,14 +85,15 @@ An at-prefixed name declares or calls a CUDL function. Parameters are
 hash-prefixed variables. A declaration owns an indented body; a call does not.
 
 ```cudl
-@greet #person
-    print Hello #person
+SCRIPTS
+    @greet #person
+        print Hello #person
 
-@add #left #right
-    return #left + #right
+    @add #left #right
+        return #left + #right
 
-#total = @add 10 20
-@greet Harry
+    #total = @add 10 20
+    @greet Harry
 ```
 
 In design context, `@Name` references a reusable component. The parser
@@ -199,7 +207,6 @@ SCRIPTS
 
     @start
         #started = true
-        print Application started
 
     python
         print("Python host only")
@@ -230,7 +237,6 @@ timing and interpolation semantics.
 
 The goal is not to remove every symbol. Each symbol should have one obvious
 purpose and should not be required when indentation or plain words are clearer.
-
 
 ## 11. Bounded parsing
 
