@@ -14,10 +14,11 @@ time-based experiences. The host application retains its runtime and lifecycle.
 ## 1. Five-part application file
 
 A single `.cudl` file may contain all five peer sections. They may appear in
-any order, each at most once. Empty sections may be omitted. The compiler
-normalizes them to GUIDE, KIT, PAGES, SCRIPTS, TIME in the application IR.
-A host may also request a standalone source fragment; a fragment is not a
-complete five-part application.
+any order, each at most once. Empty sections may be omitted. An optional
+`bundle AppName` block may wrap all sections and, when present, must be the
+only root-level statement. The compiler normalizes sections to GUIDE, KIT,
+PAGES, SCRIPTS, TIME in application IR. A host may also request a standalone
+fragment; a fragment is not a complete five-part application.
 
 | Section | Responsibility |
 | --- | --- |
@@ -29,13 +30,19 @@ complete five-part application.
 
 ## 2. Source rules
 
-- Four spaces are the canonical indentation unit.
-- Indentation defines blocks; no mandatory braces, semicolons or block closers.
-- Built-in keywords and section names are case-insensitive.
+- Four spaces are the canonical indentation unit; indentation closes blocks.
+- Named language/configuration blocks use readable words, not braces or semicolons.
+- Visual structure in KIT and PAGES uses `<tag optional text>` opening tags;
+  indentation nests children and no explicit closing tags are written.
+- Custom components are declared as `component Name` in KIT and used as
+  `<Name>` in visual sections. Properties use indented assignments.
+- Built-in keywords, section names and tag names are case-insensitive.
 - User-defined names preserve spelling; symbol lookup is case-insensitive.
 - Blank lines are insignificant.
 - Ordinary text is unquoted unless escaping or special characters require quotes.
 - `#` introduces variables/references; `##` introduces comments.
+- `@` is reserved for function declarations and calls in SCRIPTS.
+- Square brackets are reserved for indexing, not collection literals.
 - Assignments consistently use `name = value`.
 - Source locations are retained for diagnostics.
 
@@ -46,16 +53,16 @@ SCRIPTS
     #name = Harry
     #age = 21
     #active = true
-    #items = [red, green, blue]
-    #first = #items[0]
+    #first = #people[0]
     #total = 100 + 50
 ```
 
 Values are dynamically typed. Reassignment may change type. `true`, `false`
-and `null` are typed literals. Inline mapping literals and immutable
-declarations are design directions only until parser, runtime and conformance
-tests explicitly mark them implemented. Indexing is bounds-checked and cannot
-access arbitrary host objects.
+and `null` are typed literals. The `#people` collection in the example is
+supplied by host data; CUDL reads it through a hash-prefixed path. List, tuple
+and mapping literals are not part of v1. The reference runtime supports
+`const #name = value` for an immutable binding. Indexing is bounds-checked
+and cannot access arbitrary host objects.
 
 | Purpose | Operators |
 | --- | --- |
@@ -77,7 +84,7 @@ markup, design tokens or business logic.
 GUIDE
     name = HelloApp
     version = 1.0
-    targets = [android, ios, web, windows, macos, linux]
+    targets = android, ios, web, windows, macos, linux
     routing = automatic
     default-device = responsive
 ```
@@ -94,9 +101,9 @@ platform-specific implementations.
 ```cudl
 KIT
     theme = light-brown
-        background = #F5F0E8
-        foreground = #292521
-        accent = #B98B68
+        background = "#F5F0E8"
+        foreground = "#292521"
+        accent = "#B98B68"
         radius = 18
 
     component Navigation
@@ -147,13 +154,13 @@ PAGES declares screens, layout and interaction bindings.
 
 ```cudl
 PAGES
-    page Home
+    <page Home>
         background = light-brown.background
-        center
-            @WelcomeCard
+        <column>
+            <WelcomeCard>
                 heading = Welcome, Harry
                 subtitle = A little room to breathe
-            button Get Started
+            <button Get Started>
                 on click @start
 ```
 
@@ -213,6 +220,7 @@ changing the language or its source compatibility.
 | Five-section parsing, duplicate checks, case-insensitive section names | Implemented |
 | Flexible section order with canonical IR serialization | Implemented in this milestone |
 | Dynamic values, safe expressions and functions | Implemented subset |
+| Indentation-scoped visual tags and KIT-defined custom tag references | Implemented in this milestone |
 | Component contracts and property validation | Implemented subset |
 | Pure device-aware component route selection | Implemented in this milestone |
 | GUIDE semantic validation and global routing inheritance | Planned |
