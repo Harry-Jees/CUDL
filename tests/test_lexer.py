@@ -19,6 +19,12 @@ def test_tokenizes_page_and_nested_content():
     ]
 
 
+def test_tokenizes_angle_bracket_layout_tags():
+    tokens = tokenize("<button Get Started>\n    <WelcomeCard>")
+    tags = [token for token in tokens if token.kind is TokenKind.TAG]
+    assert [token.value for token in tags] == ["button Get Started", "WelcomeCard"]
+
+
 def test_tokenizes_navigation_arrow_and_component_reference():
     tokens = tokenize('@Profile -> open')
     assert [token.kind for token in tokens[:-2]] == [
