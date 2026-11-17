@@ -56,6 +56,7 @@ class ParseResult:
 
 
 _NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*")
+_TAG = re.compile(r"^<([A-Za-z_][A-Za-z0-9_-]*)(?:\s+([^<>]*))?>$")
 _AT_NAME = re.compile(r"^@([A-Za-z_][A-Za-z0-9_-]*)")
 _VARIABLE_ASSIGNMENT = re.compile(r"^#[A-Za-z_][A-Za-z0-9_]*\s*=\s*\S.*$")
 _NATIVE_BLOCKS = {"js", "javascript", "ts", "typescript", "python", "java", "kotlin", "swift", "c", "cpp", "rust", "go", "json"}
@@ -85,6 +86,9 @@ def _strip_comment(text: str) -> str:
 
 def _split_statement(text: str) -> tuple[str, str]:
     """Split a statement while preserving CUDL's special prefixes."""
+    tag = _TAG.fullmatch(text)
+    if tag:
+        return tag.group(1).casefold(), (tag.group(2) or "").strip()
     if text.startswith("#"):
         return "variable", text
     if text.startswith("@"):
@@ -213,6 +217,20 @@ def parse(text: str, source: str | None = None) -> ParseResult:
 
         statement = _strip_comment(raw[indent:])
         if not statement:
+            continue
+
+        if statement.startswith("<") and _TAG.fullmatch(statement) is None:
+            diagnostics.append(Diagnostic(
+                code="CUDL1009",
+                message="Layout tags use <tag optional text>; indentation closes their blocks. Closing tags and inline attributes are not supported.",
+                severity=Severity.ERROR,
+                line=line_number,
+                column=indent + 1,
+                source=source,
+                suggestion="Use one opening tag per line, put properties in indented assignments, and let indentation close the block.",
+                end_column=indent + len(statement) + 1,
+                line_text=raw,
+            ))
             continue
 
         if statement.startswith("#") and not _VARIABLE_ASSIGNMENT.fullmatch(statement):
