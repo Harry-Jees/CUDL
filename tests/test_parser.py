@@ -37,6 +37,37 @@ def test_preserves_hash_variables_and_at_functions():
     assert not script.children[2].children
 
 
+def test_parses_indentation_scoped_layout_and_custom_component_tags():
+    result = parse(
+        "KIT\n"
+        "    component WelcomeCard\n"
+        "        property heading\n"
+        "        <column>\n"
+        "            <title heading>\n"
+        "PAGES\n"
+        "    <page Home>\n"
+        "        <WelcomeCard>\n"
+        "            heading = Welcome to CUDL\n"
+    )
+
+    assert not result.has_errors
+    kit, pages = result.document.nodes
+    component = kit.children[0]
+    assert (component.kind, component.value) == ("component", "WelcomeCard")
+    assert component.children[1].kind == "column"
+    assert component.children[1].children[0].value == "heading"
+    page = pages.children[0]
+    assert (page.kind, page.value) == ("page", "Home")
+    assert page.children[0].kind == "welcomecard"
+    assert page.children[0].children[0].value == "= Welcome to CUDL"
+
+
+def test_rejects_explicit_closing_layout_tags():
+    result = parse("PAGES\n    <page Home>\n    </page>\n")
+    assert result.has_errors
+    assert result.diagnostics[0].code == "CUDL1009"
+
+
 def test_reports_non_four_space_indentation():
     result = parse("page Home\n  title Bad indent\n")
     assert result.has_errors
