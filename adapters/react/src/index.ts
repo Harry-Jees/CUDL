@@ -216,40 +216,31 @@ function renderNode(
   }
   const value = stringifyValue(resolved);
 
-  if (name.startsWith("@")) {
-    const componentName = name.slice(1);
-    const assigned = readAssignments(node, data, onDiagnostic);
-    const CustomComponent = registry[componentName];
-    const definition = definitions.get(componentName);
+  const assigned = readAssignments(node, data, onDiagnostic);
+  const CustomComponent = registry[name];
+  if (CustomComponent) {
+    return createElement(
+      CustomComponent,
+      { key, name, value, sourceLine: node.source?.line, properties: assigned },
+      ...(node.children ?? [])
+        .filter((child) => !(child.value ?? "").trimStart().startsWith("="))
+        .map((child, index) => renderNode(child, registry, definitions, `${key}.${index}`, assigned, data, onDiagnostic)),
+    );
+  }
 
-    if (CustomComponent) {
-      return createElement(
-        CustomComponent,
-        { key, name: componentName, value, sourceLine: node.source?.line, properties: assigned },
-        ...(node.children ?? [])
-          .filter((child) => !(child.value ?? "").trimStart().startsWith("="))
-          .map((child, index) => renderNode(child, registry, definitions, `${key}.${index}`, assigned, data, onDiagnostic)),
-      );
-    }
-
-    if (definition) {
-      const body = (definition.children ?? []).filter((child) => child.name !== "property");
-      return createElement(
-        "div",
-        { key, "data-cudl-component": componentName, "data-cudl-source-line": node.source?.line },
-        ...body.map((child, index) => renderNode(child, registry, definitions, `${key}.component.${index}`, assigned, data, onDiagnostic)),
-      );
-    }
+  const definition = definitions.get(name);
+  if (definition) {
+    const body = (definition.children ?? []).filter((child) => child.name !== "property");
+    return createElement(
+      "div",
+      { key, "data-cudl-component": name, "data-cudl-source-line": node.source?.line },
+      ...body.map((child, index) => renderNode(child, registry, definitions, `${key}.component.${index}`, assigned, data, onDiagnostic)),
+    );
   }
 
   const children = (node.children ?? [])
     .filter((child) => !(child.value ?? "").trimStart().startsWith("="))
     .map((child, index) => renderNode(child, registry, definitions, `${key}.${index}`, properties, data, onDiagnostic));
-
-  const CustomComponent = registry[name];
-  if (CustomComponent) {
-    return createElement(CustomComponent, { key, name, value, sourceLine: node.source?.line, properties }, ...children);
-  }
 
   const tag = TAGS[name];
   if (!tag) {
