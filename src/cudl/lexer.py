@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+import re
 
 from .limits import MAX_LINE_CHARACTERS, MAX_NESTING_LEVEL, MAX_SOURCE_CHARACTERS, MAX_TOKENS
 
@@ -25,6 +26,7 @@ class TokenKind(str, Enum):
     COMMA = "COMMA"
     DOT = "DOT"
     AT = "AT"
+    TAG = "TAG"
     HASH = "HASH"
     OPERATOR = "OPERATOR"
     LBRACKET = "LBRACKET"
@@ -158,6 +160,15 @@ def tokenize(source: str) -> list[Token]:
                 emit(Token(_SINGLE[char], char, line_no, column))
                 i += 1
                 continue
+
+            if char == "<" and i == width:
+                closing = raw.find(">", i + 1)
+                if closing > i:
+                    tag_body = raw[i + 1:closing].strip()
+                    if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_-]*(?:\s+[^<>]*)?", tag_body):
+                        emit(Token(TokenKind.TAG, tag_body, line_no, column))
+                        i = closing + 1
+                        continue
 
             if char in _OPERATORS:
                 start = i
