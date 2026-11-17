@@ -8,24 +8,23 @@ bundle MotionCard
 
     KIT
         theme = calm
-            background = #F5F0E8
-            foreground = #292521
-            accent = #B98B68
+            background = "#F5F0E8"
+            foreground = "#292521"
+            accent = "#B98B68"
             radius = 18
 
         component WelcomeCard
             property heading
-            card
-                title heading
+            <column>
+                <title heading>
 
     PAGES
-        page Home
-            center
-                @WelcomeCard
+        <page Home>
+            <column>
+                <WelcomeCard>
                     heading = Welcome to CUDL
-                text A portable five-part application bundle
-                button Continue
-                    on click @start
+                <text A portable five-part application bundle>
+                <button Continue>
 
     SCRIPTS
         #started = false
