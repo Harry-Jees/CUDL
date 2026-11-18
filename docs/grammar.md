@@ -213,3 +213,24 @@ event dispatch remain staged. See the five-part language specification.
 The reference lexer and parser bound source size, line length, indentation
 depth, node count and token count. Exceeding a limit produces a location-aware
 error. Split large applications into smaller modules.
+
+
+## 13. Deterministic syntax diagnostics
+
+The parser reports unsupported tag forms as CUDL1009 and malformed
+at-prefixed function statements as CUDL1010.
+
+~~~cudl
+PAGES
+    <button Start color=red> ## invalid: inline attributes are not v1 syntax
+
+SCRIPTS
+    @start#person ## invalid: separate the function name and arguments
+    @start!       ## invalid: function names cannot have punctuation suffixes
+~~~
+
+Use a tag's optional text for its value and put component properties on
+indented name = value lines. Quote text when it must preserve characters
+that would otherwise look like syntax. A function statement is @name
+with optional whitespace-separated arguments; function calls do not use
+parentheses.
