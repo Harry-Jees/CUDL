@@ -94,3 +94,10 @@ def test_tokenizer_stops_at_token_limit(monkeypatch):
     monkeypatch.setattr(lexer_module, "MAX_TOKENS", 4)
     with pytest.raises(LexError, match="Token count exceeds"):
         tokenize("one two three")
+
+
+def test_preserves_double_hash_inside_quoted_string_before_trailing_comment():
+    tokens = tokenize('text "keep ## inside" ## discard this\n')
+    string = next(token for token in tokens if token.kind is TokenKind.STRING)
+    assert string.value == "keep ## inside"
+    assert not any(token.value == "discard" for token in tokens)
