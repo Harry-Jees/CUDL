@@ -57,7 +57,7 @@ class ParseResult:
 
 _NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*")
 _TAG = re.compile(r"^<([A-Za-z_][A-Za-z0-9_-]*)(?:\s+([^<>]*))?>$")
-_AT_NAME = re.compile(r"^@([A-Za-z_][A-Za-z0-9_-]*)")
+_FUNCTION_STATEMENT = re.compile(r"^@([A-Za-z_][A-Za-z0-9_-]*)(?:\s+(.*))?$")
 _VARIABLE_ASSIGNMENT = re.compile(r"^#[A-Za-z_][A-Za-z0-9_]*\s*=\s*\S.*$")
 _NATIVE_BLOCKS = {"js", "javascript", "ts", "typescript", "python", "java", "kotlin", "swift", "c", "cpp", "rust", "go", "json"}
 
@@ -84,6 +84,27 @@ def _strip_comment(text: str) -> str:
     return text.strip()
 
 
+def _has_unquoted_assignment(value: str) -> bool:
+    """Return whether tag text contains an unquoted name=value attribute."""
+    quote: str | None = None
+    escaped = False
+    for index, char in enumerate(value):
+        if quote is not None:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == quote:
+                quote = None
+        elif char in ("'", '"'):
+            quote = char
+        elif char == "=":
+            left = value[:index].rstrip()
+            if re.search(r"(?:^|\s)[A-Za-z_][A-Za-z0-9_-]*$", left):
+                return True
+    return False
+
+
 def _split_statement(text: str) -> tuple[str, str]:
     """Split a statement while preserving CUDL's special prefixes."""
     tag = _TAG.fullmatch(text)
@@ -92,9 +113,9 @@ def _split_statement(text: str) -> tuple[str, str]:
     if text.startswith("#"):
         return "variable", text
     if text.startswith("@"):
-        match = _AT_NAME.match(text)
+        match = _FUNCTION_STATEMENT.fullmatch(text)
         if match:
-            return "@" + match.group(1).casefold(), text[match.end():].strip()
+            return "@" + match.group(1).casefold(), (match.group(2) or "").strip()
         return text, ""
     match = _NAME.match(text)
     if not match:
@@ -219,15 +240,32 @@ def parse(text: str, source: str | None = None) -> ParseResult:
         if not statement:
             continue
 
-        if statement.startswith("<") and _TAG.fullmatch(statement) is None:
+        tag_match = _TAG.fullmatch(statement)
+        if statement.startswith("<") and (
+            tag_match is None or _has_unquoted_assignment(tag_match.group(2) or "")
+        ):
             diagnostics.append(Diagnostic(
                 code="CUDL1009",
-                message="Layout tags use <tag optional text>; indentation closes their blocks. Closing tags and inline attributes are not supported.",
+                message="Layout tags use <tag optional text>; closing tags and inline name=value attributes are not supported.",
                 severity=Severity.ERROR,
                 line=line_number,
                 column=indent + 1,
                 source=source,
                 suggestion="Use one opening tag per line, put properties in indented assignments, and let indentation close the block.",
+                end_column=indent + len(statement) + 1,
+                line_text=raw,
+            ))
+            continue
+
+        if statement.startswith("@") and _FUNCTION_STATEMENT.fullmatch(statement) is None:
+            diagnostics.append(Diagnostic(
+                code="CUDL1010",
+                message="A function statement must use @name followed by optional whitespace-separated arguments.",
+                severity=Severity.ERROR,
+                line=line_number,
+                column=indent + 1,
+                source=source,
+                suggestion="Use @greet or @greet #person; separate the function name from its arguments with whitespace.",
                 end_column=indent + len(statement) + 1,
                 line_text=raw,
             ))
