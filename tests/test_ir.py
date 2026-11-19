@@ -102,3 +102,19 @@ def test_ir_deserializer_enforces_node_and_nesting_limits(monkeypatch):
     monkeypatch.setattr("cudl.ir.MAX_NESTING_LEVEL", 1)
     with pytest.raises(IRValidationError, match="nesting exceeds"):
         IRDocument.from_dict(payload)
+
+
+def test_ir_deserializer_rejects_semantically_inconsistent_categories():
+    payload = lower(parse("page Home\n    button Continue\n").document).to_dict()
+    payload["nodes"][0]["category"] = "generic"
+    with pytest.raises(IRValidationError, match="semantic category 'layout'"):
+        IRDocument.from_dict(payload)
+
+    script_payload = lower(parse(
+        "script\n"
+        "    @greet #person\n"
+        "        print Hello #person\n"
+    ).document).to_dict()
+    script_payload["nodes"][0]["children"][0]["category"] = "component"
+    with pytest.raises(IRValidationError, match="semantic category 'declaration'"):
+        IRDocument.from_dict(script_payload)
