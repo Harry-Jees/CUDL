@@ -62,7 +62,9 @@ def _required_string(payload: Mapping[str, Any], key: str, *, allow_empty: bool 
     return value
 
 
-def _deserialize_node(payload: object, *, depth: int, node_count: list[int]) -> IRNode:
+def _deserialize_node(
+    payload: object, *, depth: int, node_count: list[int], in_script: bool = False
+) -> IRNode:
     if depth > MAX_NESTING_LEVEL:
         raise IRValidationError(
             f"IR nesting exceeds the {MAX_NESTING_LEVEL}-level safety limit."
@@ -99,6 +101,20 @@ def _deserialize_node(payload: object, *, depth: int, node_count: list[int]) -> 
     if not isinstance(children, list):
         raise IRValidationError("IR node children must be an array.")
 
+    script_context = in_script or kind in _SCRIPT_BLOCKS
+    deserialized_children = [
+        _deserialize_node(
+            child, depth=depth + 1, node_count=node_count, in_script=script_context
+        )
+        for child in children
+    ]
+    expected_category = _category(kind, in_script, bool(deserialized_children))
+    if category != expected_category:
+        raise IRValidationError(
+            f"IR node '{kind}' category '{category}' does not match "
+            f"its semantic category '{expected_category}'."
+        )
+
     return IRNode(
         kind=kind,
         name=name,
@@ -106,10 +122,7 @@ def _deserialize_node(payload: object, *, depth: int, node_count: list[int]) -> 
         line=line,
         raw_source=raw_source,
         category=category,
-        children=[
-            _deserialize_node(child, depth=depth + 1, node_count=node_count)
-            for child in children
-        ],
+        children=deserialized_children,
     )
 
 

@@ -37,6 +37,37 @@ def test_preserves_hash_variables_and_at_functions():
     assert not script.children[2].children
 
 
+def test_parses_indentation_scoped_layout_and_custom_component_tags():
+    result = parse(
+        "KIT\n"
+        "    component WelcomeCard\n"
+        "        property heading\n"
+        "        <column>\n"
+        "            <title heading>\n"
+        "PAGES\n"
+        "    <page Home>\n"
+        "        <WelcomeCard>\n"
+        "            heading = Welcome to CUDL\n"
+    )
+
+    assert not result.has_errors
+    kit, pages = result.document.nodes
+    component = kit.children[0]
+    assert (component.kind, component.value) == ("component", "WelcomeCard")
+    assert component.children[1].kind == "column"
+    assert component.children[1].children[0].value == "heading"
+    page = pages.children[0]
+    assert (page.kind, page.value) == ("page", "Home")
+    assert page.children[0].kind == "welcomecard"
+    assert page.children[0].children[0].value == "= Welcome to CUDL"
+
+
+def test_rejects_explicit_closing_layout_tags():
+    result = parse("PAGES\n    <page Home>\n    </page>\n")
+    assert result.has_errors
+    assert result.diagnostics[0].code == "CUDL1009"
+
+
 def test_reports_non_four_space_indentation():
     result = parse("page Home\n  title Bad indent\n")
     assert result.has_errors
@@ -138,3 +169,39 @@ def test_diagnostic_span_points_at_invalid_hash_statement():
     assert diagnostic.column == 1
     assert diagnostic.end_column == len("#name") + 1
     assert diagnostic.line_text == "#name"
+
+
+def test_rejects_inline_tag_attributes_but_allows_quoted_equals_text():
+    invalid = parse("PAGES\n    <button Start color=red>\n", source="button.cudl")
+    diagnostic = invalid.diagnostics[0]
+    assert diagnostic.code == "CUDL1009"
+    assert diagnostic.source == "button.cudl"
+    assert diagnostic.line == 2
+    assert diagnostic.column == 5
+
+    valid = parse('PAGES\n    <title "A = B">\n')
+    assert not valid.has_errors
+    assert valid.document.nodes[0].children[0].value == '"A = B"'
+
+
+def test_rejects_malformed_function_names_and_missing_argument_separator():
+    for statement in ("@", "@9start", "@start!", "@start#person"):
+        result = parse(f"SCRIPTS\n    {statement}\n", source="functions.cudl")
+        diagnostic = result.diagnostics[0]
+        assert diagnostic.code == "CUDL1010"
+        assert diagnostic.source == "functions.cudl"
+        assert diagnostic.line == 2
+        assert diagnostic.column == 5
+
+
+def test_accepts_function_without_arguments_and_with_whitespace_separated_arguments():
+    result = parse("SCRIPTS\n    @start\n    @greet #person\n")
+    assert not result.has_errors
+    assert [node.kind for node in result.document.nodes[0].children] == ["@start", "@greet"]
+    assert result.document.nodes[0].children[1].value == "#person"
+
+
+def test_malformed_function_diagnostic_is_stable():
+    first = parse("SCRIPTS\n    @bad!\n", source="stable.cudl").diagnostics[0].to_dict()
+    second = parse("SCRIPTS\n    @bad!\n", source="stable.cudl").diagnostics[0].to_dict()
+    assert first == second

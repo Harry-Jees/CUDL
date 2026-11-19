@@ -46,20 +46,24 @@ def test_hash_paths_support_mapping_and_sequence_indexing():
     assert result.output == ["Ada"]
 
 
-def test_list_and_mapping_literals_support_simple_indexing():
+def test_host_collections_are_indexable_but_collection_literals_are_rejected():
     result = run_script(
         "script\n"
-        "    #items = [Harry, Ada, Lin]\n"
-        "    #user = {name: Harry, age: 21}\n"
         "    #first = #items[0]\n"
         "    #person = #user[name]\n"
         "    print #first\n"
-        "    print #person\n"
+        "    print #person\n",
+        data={"items": ["Harry", "Ada", "Lin"], "user": {"name": "Harry", "age": 21}},
     )
 
-    assert result.variables["items"] == ["Harry", "Ada", "Lin"]
-    assert result.variables["user"] == {"name": "Harry", "age": 21}
+    assert result.variables["first"] == "Harry"
+    assert result.variables["person"] == "Harry"
     assert result.output == ["Harry", "Harry"]
+
+    with pytest.raises(CUDLRuntimeError, match="Collection literals are not part"):
+        run_script("script\n    #items = [Harry, Ada]\n")
+    with pytest.raises(CUDLRuntimeError, match="Collection literals are not part"):
+        run_script("script\n    #user = {name: Harry}\n")
 
 
 def test_safe_arithmetic_and_comparisons_are_evaluated():

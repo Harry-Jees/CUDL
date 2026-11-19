@@ -85,6 +85,17 @@ def test_lower_bundle_emits_versioned_typed_section_ir():
     assert ir["sections"]["time"]["nodes"][0]["name"] == "timeline"
 
 
+def test_five_part_welcome_example_uses_custom_layout_tags():
+    source = Path("examples/five-part-welcome.cudl").read_text(encoding="utf-8")
+    result = parse_bundle(source, source="examples/five-part-welcome.cudl")
+
+    assert not result.has_errors
+    page = result.bundle.sections["pages"][0]
+    assert (page.kind, page.value) == ("page", "Home")
+    assert page.children[0].kind == "column"
+    assert page.children[0].children[0].kind == "welcomecard"
+
+
 def test_empty_source_reports_missing_application_sections():
     result = parse_bundle("## only a comment\n")
     assert result.has_errors
