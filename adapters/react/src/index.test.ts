@@ -12,7 +12,7 @@ function findElements(node: ReactNode, type: string): ReactElement<any>[] {
     }
     if (!isValidElement(value)) return;
     if (value.type === type) found.push(value);
-    visit(value.props.children as ReactNode);
+    visit((value as ReactElement<any>).props.children as ReactNode);
   };
   visit(node);
   return found;
