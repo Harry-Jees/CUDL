@@ -162,7 +162,7 @@ export function resolveCUDLValue(
 /** Permit ordinary navigation/resource URLs while rejecting executable or opaque schemes. */
 function safeResourceURL(value: string, kind: "link" | "image"): string | undefined {
   const candidate = value.trim();
-  if (!candidate || candidate.length > 4096 || /[\\u0000-\\u001f\\u007f]/.test(candidate)) return undefined;
+  if (!candidate || candidate.length > 4096 || /[\u0000-\u001f\u007f\\]/.test(candidate)) return undefined;
   if (candidate.startsWith("//")) return undefined;
   if (/^[a-z][a-z0-9+.-]*:/i.test(candidate)) {
     const scheme = candidate.slice(0, candidate.indexOf(":")).toLowerCase();
