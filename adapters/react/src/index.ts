@@ -53,7 +53,7 @@ type CUDLData = Record<string, unknown>;
 type CUDLPathPart = string | number;
 
 export interface CUDLRuntimeDiagnostic {
-  code: "CUDL4001" | "CUDL4002";
+  code: "CUDL4001" | "CUDL4002" | "CUDL4003";
   message: string;
   line?: number;
 }
@@ -158,7 +158,20 @@ export function resolveCUDLValue(
   return raw;
 }
 
-function stringifyValue(value: unknown): string {
+
+/** Permit ordinary navigation/resource URLs while rejecting executable or opaque schemes. */
+function safeResourceURL(value: string, kind: "link" | "image"): string | undefined {
+  const candidate = value.trim();
+  if (!candidate || candidate.length > 4096 || /[\\u0000-\\u001f\\u007f]/.test(candidate)) return undefined;
+  if (candidate.startsWith("//")) return undefined;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(candidate)) {
+    const scheme = candidate.slice(0, candidate.indexOf(":")).toLowerCase();
+    const allowed = kind === "link" ? new Set(["https", "http", "mailto", "tel"]) : new Set(["https", "http"]);
+    return allowed.has(scheme) ? candidate : undefined;
+  }
+  return candidate;
+}
+\nfunction stringifyValue(value: unknown): string {
   return value === null || value === undefined ? "" : String(value);
 }
 
