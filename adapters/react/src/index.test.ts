@@ -3,8 +3,8 @@ import test from "node:test";
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { renderCUDL, type CUDLIRDocument } from "./index.js";
 
-function findElements(node: ReactNode, type: string): ReactElement[] {
-  const found: ReactElement[] = [];
+function findElements(node: ReactNode, type: string): ReactElement<any>[] {
+  const found: ReactElement<any>[] = [];
   const visit = (value: ReactNode): void => {
     if (Array.isArray(value)) {
       value.forEach(visit);
