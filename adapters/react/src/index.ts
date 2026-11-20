@@ -260,13 +260,17 @@ function renderNode(
     return createElement("div", { key, "data-cudl-component": name }, ...children);
   }
   if (name === "image") {
-    return createElement(tag, { key, src: value, alt: "", loading: "lazy" });
+    const safe = safeResourceURL(value, "image");
+    if (value && !safe) onDiagnostic?.({ code: "CUDL4003", message: "Blocked unsafe image URL.", line: node.source?.line });
+    return createElement(tag, { key, src: safe, alt: "", loading: "lazy" });
   }
   if (name === "button") {
     return createElement(tag, { key, type: "button" }, value, ...children);
   }
   if (name === "link") {
-    return createElement(tag, { key, href: value || undefined }, ...children);
+    const safe = safeResourceURL(value, "link");
+    if (value && !safe) onDiagnostic?.({ code: "CUDL4003", message: "Blocked unsafe link URL.", line: node.source?.line });
+    return createElement(tag, { key, href: safe }, ...children);
   }
 
   const className = ["row", "column", "grid", "stack", "split", "cards", "overlay", "scroll"].includes(name)
