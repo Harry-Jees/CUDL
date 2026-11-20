@@ -27,8 +27,9 @@ are recorded in [`docs/CANONICAL-SYNTAX.md`](docs/CANONICAL-SYNTAX.md).
 ## Syntax direction
 
 CUDL is indentation-first and dynamically typed. It uses `#` for variables,
-`##` for comments, and `@` for functions or component references according
-to context. Ordinary text does not need quotes.
+`##` for comments, `@` for functions, and angle-bracket tags only for visual
+layout/design. Indentation closes blocks; square brackets are reserved for
+hash-path indexing. Ordinary text does not need quotes.
 
 ```cudl
 SCRIPTS
@@ -39,6 +40,12 @@ SCRIPTS
         print Hello #person
 
     @greet #name
+
+PAGES
+    <page Home>
+        <column>
+            <title Welcome to CUDL>
+            <button Get Started>
 ```
 
 ## Toolchain architecture

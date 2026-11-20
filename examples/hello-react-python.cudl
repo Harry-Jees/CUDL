@@ -5,47 +5,47 @@
 GUIDE
     name = HelloSwitch
     version = 0.1
-    targets = [web, android]
-    hosts = [react, python]
+    targets = web, android
+    hosts = react, python
     routing = automatic
     default-device = responsive
 
 KIT
     theme = light-brown
-        background = #F5F0E8
-        foreground = #292521
-        accent = #B98B68
-        surface = #FFF9F1
+        background = "#F5F0E8"
+        foreground = "#292521"
+        accent = "#B98B68"
+        surface = "#FFF9F1"
         radius = 18
 
     component GreetingCard
         property greeting
-        card
-            title greeting
+        <column>
+            <title greeting>
 
     component AndroidPhoneNavigation
-        row
-            text Home
-            text Discover
-            text Settings
+        <row>
+            <text Home>
+            <text Discover>
+            <text Settings>
 
     component AndroidTabletNavigation
-        column
-            text Home
-            text Discover
-            text Settings
+        <column>
+            <text Home>
+            <text Discover>
+            <text Settings>
 
     component WebNavigation
-        row
-            text Home
-            text Discover
-            text Settings
+        <row>
+            <text Home>
+            <text Discover>
+            <text Settings>
 
     component ResponsiveNavigation
-        row
-            text Home
-            text Discover
-            text Settings
+        <row>
+            <text Home>
+            <text Discover>
+            <text Settings>
 
     component Navigation
         route = android
@@ -63,14 +63,14 @@ KIT
             use = ResponsiveNavigation
 
 PAGES
-    page Home
+    <page Home>
         background = light-brown.background
-        center
-            @Navigation
-            @GreetingCard
+        <column>
+            <Navigation>
+            <GreetingCard>
                 greeting = Hello from CUDL
-            text #status
-            button Toggle theme
+            <text #status>
+            <button Toggle theme>
                 on click @toggleTheme
 
 SCRIPTS

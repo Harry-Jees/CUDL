@@ -53,7 +53,7 @@ type CUDLData = Record<string, unknown>;
 type CUDLPathPart = string | number;
 
 export interface CUDLRuntimeDiagnostic {
-  code: "CUDL4001" | "CUDL4002";
+  code: "CUDL4001" | "CUDL4002" | "CUDL4003";
   message: string;
   line?: number;
 }
@@ -158,6 +158,19 @@ export function resolveCUDLValue(
   return raw;
 }
 
+
+/** Permit ordinary navigation/resource URLs while rejecting executable or opaque schemes. */
+function safeResourceURL(value: string, kind: "link" | "image"): string | undefined {
+  const candidate = value.trim();
+  if (!candidate || candidate.length > 4096 || /[\u0000-\u001f\u007f\\]/.test(candidate)) return undefined;
+  if (candidate.startsWith("//")) return undefined;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(candidate)) {
+    const scheme = candidate.slice(0, candidate.indexOf(":")).toLowerCase();
+    const allowed = kind === "link" ? new Set(["https", "http", "mailto", "tel"]) : new Set(["https", "http"]);
+    return allowed.has(scheme) ? candidate : undefined;
+  }
+  return candidate;
+}
 function stringifyValue(value: unknown): string {
   return value === null || value === undefined ? "" : String(value);
 }
@@ -216,53 +229,48 @@ function renderNode(
   }
   const value = stringifyValue(resolved);
 
-  if (name.startsWith("@")) {
-    const componentName = name.slice(1);
-    const assigned = readAssignments(node, data, onDiagnostic);
-    const CustomComponent = registry[componentName];
-    const definition = definitions.get(componentName);
+  const assigned = readAssignments(node, data, onDiagnostic);
+  const CustomComponent = registry[name];
+  if (CustomComponent) {
+    return createElement(
+      CustomComponent,
+      { key, name, value, sourceLine: node.source?.line, properties: assigned },
+      ...(node.children ?? [])
+        .filter((child) => !(child.value ?? "").trimStart().startsWith("="))
+        .map((child, index) => renderNode(child, registry, definitions, `${key}.${index}`, assigned, data, onDiagnostic)),
+    );
+  }
 
-    if (CustomComponent) {
-      return createElement(
-        CustomComponent,
-        { key, name: componentName, value, sourceLine: node.source?.line, properties: assigned },
-        ...(node.children ?? [])
-          .filter((child) => !(child.value ?? "").trimStart().startsWith("="))
-          .map((child, index) => renderNode(child, registry, definitions, `${key}.${index}`, assigned, data, onDiagnostic)),
-      );
-    }
-
-    if (definition) {
-      const body = (definition.children ?? []).filter((child) => child.name !== "property");
-      return createElement(
-        "div",
-        { key, "data-cudl-component": componentName, "data-cudl-source-line": node.source?.line },
-        ...body.map((child, index) => renderNode(child, registry, definitions, `${key}.component.${index}`, assigned, data, onDiagnostic)),
-      );
-    }
+  const definition = definitions.get(name);
+  if (definition) {
+    const body = (definition.children ?? []).filter((child) => child.name !== "property");
+    return createElement(
+      "div",
+      { key, "data-cudl-component": name, "data-cudl-source-line": node.source?.line },
+      ...body.map((child, index) => renderNode(child, registry, definitions, `${key}.component.${index}`, assigned, data, onDiagnostic)),
+    );
   }
 
   const children = (node.children ?? [])
     .filter((child) => !(child.value ?? "").trimStart().startsWith("="))
     .map((child, index) => renderNode(child, registry, definitions, `${key}.${index}`, properties, data, onDiagnostic));
 
-  const CustomComponent = registry[name];
-  if (CustomComponent) {
-    return createElement(CustomComponent, { key, name, value, sourceLine: node.source?.line, properties }, ...children);
-  }
-
   const tag = TAGS[name];
   if (!tag) {
     return createElement("div", { key, "data-cudl-component": name }, ...children);
   }
   if (name === "image") {
-    return createElement(tag, { key, src: value, alt: "", loading: "lazy" });
+    const safe = safeResourceURL(value, "image");
+    if (value && !safe) onDiagnostic?.({ code: "CUDL4003", message: "Blocked unsafe image URL.", line: node.source?.line });
+    return createElement(tag, { key, src: safe, alt: "", loading: "lazy" });
   }
   if (name === "button") {
     return createElement(tag, { key, type: "button" }, value, ...children);
   }
   if (name === "link") {
-    return createElement(tag, { key, href: value || undefined }, ...children);
+    const safe = safeResourceURL(value, "link");
+    if (value && !safe) onDiagnostic?.({ code: "CUDL4003", message: "Blocked unsafe link URL.", line: node.source?.line });
+    return createElement(tag, { key, href: safe }, ...children);
   }
 
   const className = ["row", "column", "grid", "stack", "split", "cards", "overlay", "scroll"].includes(name)

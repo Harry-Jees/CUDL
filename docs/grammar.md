@@ -1,90 +1,96 @@
-# CUDL syntax — beginner-first draft
+# CUDL syntax — beginner-first guide
 
-The normative v1 syntax decisions live in [CANONICAL-SYNTAX.md](CANONICAL-SYNTAX.md).
-This document provides explanatory examples; if wording or examples here
-conflict with the canonical contract, the canonical contract wins. Examples
-marked as planned are specifications, not claims that every adapter executes
-them.
+The normative v1 rules live in [CANONICAL-SYNTAX.md](CANONICAL-SYNTAX.md).
+This guide explains the same syntax with practical examples. A documented
+design direction is not automatically a claim that every adapter executes it.
 
-## 1. Blocks, names and indentation
+## 1. Blocks and indentation
 
 - Four spaces represent one indentation level.
-- Indentation defines native CUDL blocks.
-- Tabs, braces, semicolons and block-closing keywords are not required.
+- Indentation defines every block and closes it; no braces, semicolons or
+  explicit closing tags are needed.
 - Blank lines are ignored.
-- Built-in keywords and the five section names are case-insensitive.
-- User-defined names preserve their written spelling; name lookup is
-  case-insensitive for portability.
-- A nested block is indented exactly one level beneath its parent.
+- Built-in keywords, section names and visual tag names are case-insensitive.
+- User-defined names retain their spelling and are looked up case-insensitively.
 - The five peer sections may appear in any order, at most once each.
-- A standalone page/script/component fragment is valid only when the host
-  explicitly requests fragment parsing; it is not a complete app bundle.
+- A standalone fragment is valid only when the host explicitly requests it.
 
-```cudl
+~~~cudl
 GUIDE
     name = HelloApp
 
 PAGES
-    page Home
-        header
-            title Welcome to CUDL
-        content
-            text My first CUDL application
-            button Get Started
-```
+    <page Home>
+        <column>
+            <title Welcome to CUDL>
+            <text My first CUDL application>
+            <button Get Started>
+~~~
 
-Ordinary text values do not need quotes. Quotes remain available when escaping
-or preserving special text.
+## 2. Visual tags
 
-## 2. Assignments and values
+Use angle-bracket tags only for visual structure in KIT and PAGES:
 
-Use one consistent assignment form in configuration, themes, component
-properties and variables:
+~~~cudl
+KIT
+    component WelcomeCard
+        property heading
+        <column>
+            <title heading>
 
-```cudl
+PAGES
+    <page Home>
+        <WelcomeCard>
+            heading = Welcome
+~~~
+
+A tag is written as `<name>` or `<name optional text>`. The optional text
+is its value. Indentation nests visual children; do not write a closing tag.
+Put properties on indented assignment lines. A custom tag is declared with
+`component Name` in KIT and used as `<Name>`.
+
+## 3. Assignments and dynamic values
+
+Use one assignment form for configuration, theme tokens, component properties
+and variables:
+
+~~~cudl
 GUIDE
     name = HelloApp
-    background = #F5F0E8
-    radius = 18
+    targets = web, android
+    background = "#F5F0E8"
 
 SCRIPTS
-    #active = true
-```
-
-The equals sign separates a name from its value. Structural declarations such
-as `page Home`, `component Card` and `route = android` introduce blocks;
-their nested properties use assignments.
-
-Values are dynamically typed. Numbers, booleans and null retain their types.
-Ordinary words and phrases are text. Lists use square brackets. Inline mapping
-syntax is a design direction only until the parser/runtime and conformance
-tests explicitly mark it implemented.
-
-```cudl
-SCRIPTS
-    #people = [Harry, Ada, Lin]
+    #age = 21
+    #age = Harry
     #first = #people[0]
-```
+~~~
 
-Variables are dynamically typed; a later assignment may change the value's
-type. A hash-prefixed path is the explicit way to read a variable or host-data
-path. Indexing is bounds-checked and does not expose arbitrary host reflection.
+Values are dynamically typed; a variable can be reassigned to a different
+type. Numbers, booleans and null retain their types. Ordinary words and
+phrases are text. The `#people` collection in this example is supplied by
+the host; CUDL reads it through the hash-prefixed path.
 
-## 3. Comments
+Square brackets are reserved for indexing, not collection literals. Indexing
+is bounds-checked and does not expose arbitrary host reflection. Use quotes
+when text contains syntax characters that must remain literal.
 
-Double hash starts a comment. Single hash is reserved for variables.
+## 4. Comments
 
-```cudl
+Double hash starts a comment. A single hash always belongs to a variable or
+data path.
+
+~~~cudl
 ## Full-line comment
 #name = Harry ## Inline comment
-```
+~~~
 
-## 4. Functions
+## 5. Functions
 
 An at-prefixed name declares or calls a CUDL function. Parameters are
-hash-prefixed variables. A declaration owns an indented body; a call does not.
+hash-prefixed variables. Function calls do not use parentheses or colons.
 
-```cudl
+~~~cudl
 SCRIPTS
     @greet #person
         print Hello #person
@@ -94,114 +100,81 @@ SCRIPTS
 
     #total = @add 10 20
     @greet Harry
-```
-
-In design context, `@Name` references a reusable component. The parser
-resolves the meaning from its containing section, not capitalization.
+~~~
 
 The reference runtime supports dynamic assignments, safe expressions,
 hash-path indexing, function calls, returns and text interpolation. It does
-not yet support loops, conditional blocks, asynchronous functions or arbitrary
-host-language execution.
+not execute arbitrary host-language blocks or support general loop and
+conditional statement blocks.
 
-## 5. GUIDE
+## 6. GUIDE
 
-GUIDE is the small application manifest: identity, target platforms, runtime
-requirements and global routing policy. It is not a general-purpose settings
-drawer and does not contain visual styling or page logic.
+GUIDE is the application manifest: identity, target platforms, host
+requirements and global routing policy. It does not contain page markup or
+business logic.
 
-```cudl
+~~~cudl
 GUIDE
     name = HelloApp
     version = 1.0
-    targets = [android, ios, web, windows, macos, linux]
+    targets = android, ios, web, windows, macos, linux
     routing = automatic
     default-device = responsive
-```
+~~~
 
-Use `targets` to declare intended build targets, not to claim that adapters
-are installed. Dependency declarations and host-stack discovery are handled
-by INDERMOS. Never put secrets in source-controlled GUIDE data.
+A target declares intent; it does not guarantee that an adapter is installed.
+Never put secrets in source-controlled GUIDE data.
 
-## 6. KIT
+## 7. KIT
 
 KIT defines reusable components, themes, design tokens, styles and component
-contracts. Every token and component property uses the same equals syntax.
+contracts. Configuration uses assignments; visual component bodies use tags.
 
-```cudl
+~~~cudl
 KIT
     theme = light-brown
-        background = #F5F0E8
-        foreground = #292521
-        accent = #B98B68
+        background = "#F5F0E8"
+        foreground = "#292521"
+        accent = "#B98B68"
         radius = 18
 
     component WelcomeCard
         property heading
         property subtitle optional
-        card
-            title heading
-            text subtitle
-```
+        <column>
+            <title heading>
+            <text subtitle>
+~~~
 
-### Component routing
+Component routing remains a separate capability: the adapter selects the
+most specific compatible platform/device route, then the declared default.
+A missing compatible route must produce a diagnostic rather than silently
+selecting an unrelated component.
 
-A component may have multiple implementations. The adapter selects the most
-specific compatible route for the current platform and device class, then
-falls back to `default`.
+## 8. PAGES
 
-```cudl
-KIT
-    component Navigation
-        route = android
-            device = phone
-            use = AndroidPhoneNavigation
+PAGES describes screens, visual hierarchy, layout and interaction declarations.
+Business logic belongs in SCRIPTS.
 
-        route = android
-            device = tablet
-            use = AndroidTabletNavigation
-
-        route = web
-            use = WebNavigation
-
-        route = default
-            use = ResponsiveNavigation
-```
-
-Platform and device class are separate: an Android tablet is both
-`platform = android` and `device = tablet`. Optional route constraints may
-include `min-width`, `max-width`, `input`, `requires` and `priority`.
-A route is only selected when the host adapter reports the required
-capabilities. No compatible route and no default must produce a diagnostic;
-CUDL must not silently substitute an unrelated component.
-
-GUIDE's `routing = automatic` enables host-context selection. Component routes
-provide explicit overrides. A host may also supply a global responsive
-fallback; component-specific matches take precedence.
-
-## 7. PAGES
-
-PAGES describes screens, layout and interaction declarations. Business logic
-belongs in SCRIPTS.
-
-```cudl
+~~~cudl
 PAGES
-    page Home
-        background = light-brown.background
-        center
-            @WelcomeCard
+    <page Home>
+        <column>
+            <WelcomeCard>
                 heading = Welcome, Harry
                 subtitle = A little room to breathe
-            button Get Started
+            <button Get Started>
                 on click @start
-```
+~~~
 
-## 8. SCRIPTS and native language blocks
+React event dispatch and responsive rendering remain adapter capabilities;
+this source shape alone does not claim they are implemented.
 
-SCRIPTS owns variables, functions, calculations, event handlers and host
-capability calls.
+## 9. SCRIPTS and native language blocks
 
-```cudl
+SCRIPTS owns variables, functions, calculations and application logic.
+
+~~~cudl
 SCRIPTS
     #started = false
 
@@ -213,36 +186,51 @@ SCRIPTS
 
     javascript
         console.log("JavaScript host only")
-```
+~~~
 
-Native blocks preserve their original language source. PICKER selects blocks
-compatible with the host target; CUDL does not execute arbitrary native code.
-JSON blocks, when enabled, are structured data and are never executable.
+Native blocks preserve their source text for compatible host tooling. The
+CUDL reference runtime does not execute Python, JavaScript or other native
+code. Use indentation-based blocks rather than bracket-delimited code.
 
-## 9. TIME
+## 10. TIME
 
 TIME describes timelines, scenes, tracks, keyframes, playback and temporal
 events. Its numeric evaluator is experimental; host playback adapters and
-event dispatch remain staged. See the five-part language specification for
-timing and interpolation semantics.
+event dispatch remain staged. See the five-part language specification.
 
-## 10. Punctuation
+## 11. Punctuation
 
 - `#` — variable declaration and reference.
 - `##` — comment.
-- `@` — CUDL function declaration/call or component reference by context.
-- `[]` — list literals and indexing.
+- `@` — function declaration or call.
+- `<tag>` — visual layout/design node in KIT or PAGES.
+- `[]` — indexing only.
 - `=` — assignment.
-- Quotes — optional for ordinary text, available for escaping and special text.
+- Quotes — optional for ordinary text, required when preserving special text.
 
-The goal is not to remove every symbol. Each symbol should have one obvious
-purpose and should not be required when indentation or plain words are clearer.
+## 12. Bounded parsing
 
-## 11. Bounded parsing
+The reference lexer and parser bound source size, line length, indentation
+depth, node count and token count. Exceeding a limit produces a location-aware
+error. Split large applications into smaller modules.
 
-The reference lexer and parser apply conservative resource limits before building
-large syntax structures: source size, individual line length, indentation depth,
-node count and token count are bounded. Exceeding a parser limit produces a
-source diagnostic; exceeding a lexer limit raises a location-aware lexical
-error. These limits are safety guards, not syntax restrictions on ordinary
-CUDL programs. Large applications should be split into smaller modules.
+
+## 13. Deterministic syntax diagnostics
+
+The parser reports unsupported tag forms as CUDL1009 and malformed
+at-prefixed function statements as CUDL1010.
+
+~~~cudl
+PAGES
+    <button Start color=red> ## invalid: inline attributes are not v1 syntax
+
+SCRIPTS
+    @start#person ## invalid: separate the function name and arguments
+    @start!       ## invalid: function names cannot have punctuation suffixes
+~~~
+
+Use a tag's optional text for its value and put component properties on
+indented name = value lines. Quote text when it must preserve characters
+that would otherwise look like syntax. A function statement is @name
+with optional whitespace-separated arguments; function calls do not use
+parentheses.

@@ -25,4 +25,4 @@ jobs:
           node-version: "22"
       - name: Build React adapter
         working-directory: adapters/react
-        run: npm install && npm run build
+        run: npm install && npm test
