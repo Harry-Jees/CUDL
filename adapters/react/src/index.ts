@@ -171,7 +171,7 @@ function safeResourceURL(value: string, kind: "link" | "image"): string | undefi
   }
   return candidate;
 }
-\nfunction stringifyValue(value: unknown): string {
+function stringifyValue(value: unknown): string {
   return value === null || value === undefined ? "" : String(value);
 }
 
