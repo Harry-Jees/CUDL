@@ -72,7 +72,7 @@ def test_routes_command_selects_android_phone_implementation(tmp_path, monkeypat
 
 def test_check_reports_invalid_utf8_without_traceback(tmp_path, monkeypatch, capsys):
     source = tmp_path / "invalid.cudl"
-    source.write_bytes(b"\\xff")
+    source.write_bytes(b"\xff")
     monkeypatch.setattr("sys.argv", ["cudl", "check", str(source)])
 
     assert main() == 2
@@ -84,7 +84,7 @@ def test_check_reports_invalid_utf8_without_traceback(tmp_path, monkeypatch, cap
 def test_graph_reports_invalid_module_encoding(tmp_path, monkeypatch, capsys):
     project = tmp_path / "project"
     project.mkdir()
-    (project / "entry.cudl").write_text("page Home\\n", encoding="utf-8")
+    (project / "entry.cudl").write_text("page Home\n", encoding="utf-8")
     (project / "broken.cudl").write_bytes(b"\\xff")
     monkeypatch.setattr("sys.argv", ["cudl", "graph", str(project), "entry.cudl"])
 
