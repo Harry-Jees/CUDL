@@ -85,7 +85,7 @@ def test_graph_reports_invalid_module_encoding(tmp_path, monkeypatch, capsys):
     project = tmp_path / "project"
     project.mkdir()
     (project / "entry.cudl").write_text("page Home\n", encoding="utf-8")
-    (project / "broken.cudl").write_bytes(b"\\xff")
+    (project / "broken.cudl").write_bytes(b"\xff")
     monkeypatch.setattr("sys.argv", ["cudl", "graph", str(project), "entry.cudl"])
 
     assert main() == 2
