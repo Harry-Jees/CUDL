@@ -74,6 +74,48 @@ _SINGLE = {
 _OPERATORS = set("=+-*/%<>!")
 _ESCAPES = {"n": "\n", "r": "\r", "t": "\t", '"': '"', "\\": "\\"}
 
+def _valid_tag_body(body: str) -> bool:
+    match = re.match(r"[A-Za-z_][A-Za-z0-9_-]*", body)
+    if match is None:
+        return False
+    rest = body[match.end():]
+    if rest and not rest[0].isspace():
+        return False
+    quote: str | None = None
+    escaped = False
+    for char in rest:
+        if quote is not None:
+            if escaped:
+                escaped = False
+            elif char == chr(92):
+                escaped = True
+            elif char == quote:
+                quote = None
+        elif char in ('"', "'"):
+            quote = char
+        elif char in "<>":
+            return False
+    return quote is None and not escaped
+
+
+def _find_tag_close(raw: str, start: int) -> int:
+    quote: str | None = None
+    escaped = False
+    for index in range(start + 1, len(raw)):
+        char = raw[index]
+        if quote is not None:
+            if escaped:
+                escaped = False
+            elif char == chr(92):
+                escaped = True
+            elif char == quote:
+                quote = None
+        elif char in ('"', "'"):
+            quote = char
+        elif char == ">":
+            return index
+    return -1
+
 
 def tokenize(source: str) -> list[Token]:
     """Convert CUDL source into tokens, including indentation structure.
@@ -162,10 +204,10 @@ def tokenize(source: str) -> list[Token]:
                 continue
 
             if char == "<" and i == width:
-                closing = raw.find(">", i + 1)
+                closing = _find_tag_close(raw, i)
                 if closing > i:
                     tag_body = raw[i + 1:closing].strip()
-                    if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_-]*(?:\s+[^<>]*)?", tag_body):
+                    if _valid_tag_body(tag_body):
                         emit(Token(TokenKind.TAG, tag_body, line_no, column))
                         i = closing + 1
                         continue

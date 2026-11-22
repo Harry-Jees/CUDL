@@ -101,3 +101,9 @@ def test_preserves_double_hash_inside_quoted_string_before_trailing_comment():
     string = next(token for token in tokens if token.kind is TokenKind.STRING)
     assert string.value == "keep ## inside"
     assert not any(token.value == "discard" for token in tokens)
+
+
+def test_tokenizes_quoted_tag_values_with_inner_delimiters_and_hashes():
+    tokens = tokenize('<title "Welcome > CUDL ##"> ## trailing comment\n')
+    tags = [token for token in tokens if token.kind is TokenKind.TAG]
+    assert [token.value for token in tags] == ['title "Welcome > CUDL ##"']

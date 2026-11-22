@@ -56,7 +56,6 @@ class ParseResult:
 
 
 _NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*")
-_TAG = re.compile(r"^<([A-Za-z_][A-Za-z0-9_-]*)(?:\s+([^<>]*))?>$")
 _FUNCTION_STATEMENT = re.compile(r"^@([A-Za-z_][A-Za-z0-9_-]*)(?:\s+(.*))?$")
 _VARIABLE_ASSIGNMENT = re.compile(r"^#[A-Za-z_][A-Za-z0-9_]*\s*=\s*\S.*$")
 _NATIVE_BLOCKS = {"js", "javascript", "ts", "typescript", "python", "java", "kotlin", "swift", "c", "cpp", "rust", "go", "json"}
@@ -105,11 +104,40 @@ def _has_unquoted_assignment(value: str) -> bool:
     return False
 
 
+def _parse_tag(text: str) -> tuple[str, str] | None:
+    if not text.startswith("<") or not text.endswith(">"):
+        return None
+    body = text[1:-1]
+    match = _NAME.match(body)
+    if match is None:
+        return None
+    rest = body[match.end():]
+    if rest and not rest[0].isspace():
+        return None
+    quote: str | None = None
+    escaped = False
+    for char in rest:
+        if quote is not None:
+            if escaped:
+                escaped = False
+            elif char == chr(92):
+                escaped = True
+            elif char == quote:
+                quote = None
+        elif char in ('"', "'"):
+            quote = char
+        elif char in "<>":
+            return None
+    if quote is not None or escaped:
+        return None
+    return match.group(0).casefold(), rest.strip()
+
+
 def _split_statement(text: str) -> tuple[str, str]:
     """Split a statement while preserving CUDL's special prefixes."""
-    tag = _TAG.fullmatch(text)
-    if tag:
-        return tag.group(1).casefold(), (tag.group(2) or "").strip()
+    tag = _parse_tag(text)
+    if tag is not None:
+        return tag
     if text.startswith("#"):
         return "variable", text
     if text.startswith("@"):

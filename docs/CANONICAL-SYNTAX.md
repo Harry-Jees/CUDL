@@ -37,7 +37,7 @@ PAGES
             <button Get Started>
 ~~~
 
-- A tag is `<name>` or `<name optional text>`, one opening tag per line.
+- A tag is `<name>` or `<name optional text>`, one opening tag per line. The outer `>` ends the tag only outside quotes; quoted optional text may contain `>` or `##`.
 - Indentation defines its children and closes its scope; no closing tag is written.
 - The optional text becomes the node's value. Put component properties in
   indented `name = value` assignments, not inline attributes.

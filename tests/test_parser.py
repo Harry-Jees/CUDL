@@ -205,3 +205,14 @@ def test_malformed_function_diagnostic_is_stable():
     first = parse("SCRIPTS\n    @bad!\n", source="stable.cudl").diagnostics[0].to_dict()
     second = parse("SCRIPTS\n    @bad!\n", source="stable.cudl").diagnostics[0].to_dict()
     assert first == second
+
+
+def test_parses_quoted_tag_value_with_inner_delimiter_and_comment_marker():
+    result = parse(
+        'PAGES\n'
+        '    <page Home>\n'
+        '        <title "Welcome > CUDL ##">\n',
+    )
+    assert not result.has_errors
+    page = result.document.nodes[0].children[0]
+    assert page.children[0].value == '"Welcome > CUDL ##"'
