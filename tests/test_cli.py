@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 from cudl.cli import main
 
@@ -68,3 +69,21 @@ def test_routes_command_selects_android_phone_implementation(tmp_path, monkeypat
     assert main() == 0
     payload = json.loads(capsys.readouterr().out)
     assert payload["implementation"] == "AndroidPhoneNavigation"
+
+
+def test_check_command_accepts_all_repository_examples(monkeypatch, capsys):
+    root = Path(__file__).resolve().parent.parent / "examples"
+    for name in ("hello.cudl", "hello-react-python.cudl", "five-part-welcome.cudl"):
+        monkeypatch.setattr("sys.argv", ["cudl", "check", str(root / name)])
+        assert main() == 0
+        assert "OK:" in capsys.readouterr().out
+
+
+def test_bundle_command_compiles_canonical_five_part_example(monkeypatch, capsys):
+    source = Path(__file__).resolve().parent.parent / "examples" / "five-part-welcome.cudl"
+    monkeypatch.setattr("sys.argv", ["cudl", "bundle", str(source)])
+    assert main() == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["application"]["type"] == "CUDLApplicationIR"
+    assert payload["application"]["name"] == "MotionCard"
+    assert "welcomeintro" in payload["time"]["timelines"]
