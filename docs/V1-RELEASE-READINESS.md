@@ -7,7 +7,7 @@ This checklist is evidence-oriented and deliberately distinguishes implemented b
 - [x] Parser errors include source context; malformed tag/function regressions are covered.
 - [x] IR v1 serialization/deserialization validates node/category semantics and bounds.
 - [x] React adapter has URL safety diagnostics and automated conformance tests.
-- [x] CI exercises Python tests, example validation, adapter build and adapter tests.
+- [x] CI exercises Python tests, all checked-in example validation, canonical five-part bundle compilation, adapter build and adapter tests.
 
 ## Acceptance gates before a v1 candidate
 - [ ] Freeze a normative grammar and test every documented construct against it.

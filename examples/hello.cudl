@@ -1,7 +1,6 @@
-page Home
-    header
-        title Hello, CUDL
-
-    content
-        text My first CUDL application
-        button Get Started
+PAGES
+    <page Home>
+        <column>
+            <title Hello, CUDL>
+            <text My first CUDL application>
+            <button Get Started>

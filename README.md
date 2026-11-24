@@ -92,6 +92,10 @@ Python, JavaScript, Java and C/C++ execution, general-purpose control flow,
 a CUDL-owned garbage collector and full JSON block interoperability are not
 currently implemented.
 
+## Example conformance
+
+The checked-in examples and their validation levels are documented in [docs/EXAMPLE-CONFORMANCE.md](docs/EXAMPLE-CONFORMANCE.md). CI parses the fragment and integration specimen, and compiles the canonical five-part bundle.
+
 ## Development
 
 Requires Python 3.10 or newer.
