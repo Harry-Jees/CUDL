@@ -87,3 +87,27 @@ def test_bundle_command_compiles_canonical_five_part_example(monkeypatch, capsys
     assert payload["application"]["type"] == "CUDLApplicationIR"
     assert payload["application"]["name"] == "MotionCard"
     assert "welcomeintro" in payload["time"]["timelines"]
+
+
+def test_check_reports_invalid_utf8_without_traceback(tmp_path, monkeypatch, capsys):
+    source = tmp_path / "invalid.cudl"
+    source.write_bytes(bytes([0xFF]))
+    monkeypatch.setattr("sys.argv", ["cudl", "check", str(source)])
+
+    assert main() == 2
+    captured = capsys.readouterr()
+    assert "cannot read" in captured.err
+    assert captured.out == ""
+
+
+def test_graph_reports_invalid_module_encoding(tmp_path, monkeypatch, capsys):
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "entry.cudl").write_text("page Home\n", encoding="utf-8")
+    (project / "broken.cudl").write_bytes(bytes([0xFF]))
+    monkeypatch.setattr("sys.argv", ["cudl", "graph", str(project), "entry.cudl"])
+
+    assert main() == 2
+    captured = capsys.readouterr()
+    assert "cannot read CUDL module" in captured.err
+    assert captured.out == ""
