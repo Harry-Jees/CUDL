@@ -7,6 +7,7 @@ This checklist is evidence-oriented and deliberately distinguishes implemented b
 - [x] Parser errors include source context; malformed tag/function regressions are covered.
 - [x] IR v1 serialization/deserialization validates node/category semantics and bounds.
 - [x] React adapter has URL safety diagnostics and automated conformance tests.
+- [x] React adapter preserves source lines on built-in/unknown elements, rejects unsupported KIT IR versions, and tests indexed host-data paths, inherited-property rejection and KIT property rendering.
 - [x] CI exercises Python tests, all checked-in example validation, canonical five-part bundle compilation, adapter build and adapter tests.
 - [x] CI builds source and wheel distributions, installs the wheel in a clean virtual environment, and smoke-tests the installed CLI against canonical examples ([run #181](https://github.com/Harry-Jees/CUDL/actions/runs/45458141278)).
 
