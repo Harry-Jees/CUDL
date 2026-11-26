@@ -174,6 +174,6 @@ test("renders adapter output through the React DOM runtime", () => {
 
   assert.equal(
     renderToStaticMarkup(rendered),
-    '<main data-cudl="page" data-cudl-source-line="1"><div class="cudl-column" data-cudl="column" data-cudl-source-line="2"><h1 data-cudl-source-line="3">Welcome &amp; learn</h1><button type="button" data-cudl-source-line="4">Start</button><div data-cudl-component="mystery" data-cudl-source-line="5"></div></div></main>',
+    '<div data-cudl-root=""><main data-cudl="page" data-cudl-source-line="1"><div class="cudl-column" data-cudl="column" data-cudl-source-line="2"><h1 data-cudl="title" data-cudl-source-line="3">Welcome &amp; learn</h1><button type="button" data-cudl-source-line="4">Start</button><div data-cudl-component="mystery" data-cudl-source-line="5"></div></div></main></div>',
   );
 });
