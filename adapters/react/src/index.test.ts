@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { isValidElement, type ReactElement, type ReactNode } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { renderCUDL, renderCUDLApplication, resolveCUDLValue, type CUDLApplicationIR, type CUDLIRDocument } from "./index.js";
 
 function findElements(node: ReactNode, type: string): ReactElement<any>[] {
@@ -143,4 +144,36 @@ test("renders KIT definitions through application IR and rejects unsupported KIT
     },
   } as unknown as CUDLApplicationIR;
   assert.throws(() => renderCUDLApplication(invalid), /Unsupported CUDL KIT IR/);
+});
+
+
+test("renders adapter output through the React DOM runtime", () => {
+  const rendered = renderCUDL({
+    type: "CUDLIR",
+    version: 1,
+    nodes: [{
+      kind: "element",
+      category: "element",
+      name: "page",
+      value: "Home",
+      source: { line: 1 },
+      children: [{
+        kind: "element",
+        category: "element",
+        name: "column",
+        value: "",
+        source: { line: 2 },
+        children: [
+          { kind: "element", category: "element", name: "title", value: "Welcome & learn", source: { line: 3 } },
+          { kind: "element", category: "element", name: "button", value: "Start", source: { line: 4 } },
+          { kind: "element", category: "element", name: "mystery", value: "fallback", source: { line: 5 } },
+        ],
+      }],
+    }],
+  });
+
+  assert.equal(
+    renderToStaticMarkup(rendered),
+    '<main data-cudl="page" data-cudl-source-line="1"><div class="cudl-column" data-cudl="column" data-cudl-source-line="2"><h1 data-cudl-source-line="3">Welcome &amp; learn</h1><button type="button" data-cudl-source-line="4">Start</button><div data-cudl-component="mystery" data-cudl-source-line="5"></div></div></main>',
+  );
 });
