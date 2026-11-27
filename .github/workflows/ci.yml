@@ -38,6 +38,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Build React adapter
+      - name: Install React adapter dependencies
         working-directory: adapters/react
-        run: npm install && npm test
+        run: npm install
+      - name: Build and test React adapter
+        working-directory: adapters/react
+        run: npm test
+      - name: Install Chromium for browser smoke tests
+        working-directory: adapters/react
+        run: npx playwright install --with-deps chromium
+      - name: Run React adapter in a real browser
+        working-directory: adapters/react
+        run: npm run test:browser
