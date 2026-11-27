@@ -257,20 +257,20 @@ function renderNode(
 
   const tag = TAGS[name];
   if (!tag) {
-    return createElement("div", { key, "data-cudl-component": name }, ...children);
+    return createElement("div", { key, "data-cudl-component": name, "data-cudl-source-line": node.source?.line }, ...children);
   }
   if (name === "image") {
     const safe = safeResourceURL(value, "image");
     if (value && !safe) onDiagnostic?.({ code: "CUDL4003", message: "Blocked unsafe image URL.", line: node.source?.line });
-    return createElement(tag, { key, src: safe, alt: "", loading: "lazy" });
+    return createElement(tag, { key, src: safe, alt: "", loading: "lazy", "data-cudl-source-line": node.source?.line });
   }
   if (name === "button") {
-    return createElement(tag, { key, type: "button" }, value, ...children);
+    return createElement(tag, { key, type: "button", "data-cudl-source-line": node.source?.line }, value, ...children);
   }
   if (name === "link") {
     const safe = safeResourceURL(value, "link");
     if (value && !safe) onDiagnostic?.({ code: "CUDL4003", message: "Blocked unsafe link URL.", line: node.source?.line });
-    return createElement(tag, { key, href: safe }, ...children);
+    return createElement(tag, { key, href: safe, "data-cudl-source-line": node.source?.line }, ...children);
   }
 
   const className = ["row", "column", "grid", "stack", "split", "cards", "overlay", "scroll"].includes(name)
@@ -278,7 +278,7 @@ function renderNode(
     : undefined;
   return createElement(
     tag,
-    { key, className, "data-cudl": name },
+    { key, className, "data-cudl": name, "data-cudl-source-line": node.source?.line },
     value && !["page", "header", "content", "footer", "divider", "spacer"].includes(name) ? value : null,
     ...children,
   );
@@ -335,6 +335,9 @@ export function renderCUDLApplication(
   }
 
   const kit = application.sections.kit;
+  if (kit && (kit.type !== "CUDLIR" || kit.version !== 1)) {
+    throw new Error("Unsupported CUDL KIT IR or version.");
+  }
   const definitions = (kit?.nodes ?? []).filter(
     (node) => node.name.toLowerCase() === "component",
   );

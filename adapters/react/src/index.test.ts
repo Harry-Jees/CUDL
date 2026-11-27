@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { isValidElement, type ReactElement, type ReactNode } from "react";
-import { renderCUDL, type CUDLIRDocument } from "./index.js";
+import { renderToStaticMarkup } from "react-dom/server";
+import { renderCUDL, renderCUDLApplication, resolveCUDLValue, type CUDLApplicationIR, type CUDLIRDocument } from "./index.js";
 
 function findElements(node: ReactNode, type: string): ReactElement<any>[] {
   const found: ReactElement<any>[] = [];
@@ -73,4 +74,106 @@ test("allows ordinary relative and HTTP(S) resources and safe link schemes", () 
 
 test("rejects unsupported IR versions before rendering", () => {
   assert.throws(() => renderCUDL({ type: "CUDLIR", version: 2, nodes: [] }), /Unsupported CUDL IR/);
+});
+
+
+test("preserves source lines on built-in and unknown host elements", () => {
+  const rendered = renderCUDL(document([
+    { name: "title", value: "Welcome", line: 12 },
+    { name: "custom-unknown", value: "Safe fallback", line: 13 },
+  ]));
+  assert.equal(findElements(rendered, "h1")[0]?.props["data-cudl-source-line"], 12);
+  const fallback = findElements(rendered, "div").find((element) => element.props["data-cudl-component"] === "custom-unknown");
+  assert.equal(fallback?.props["data-cudl-source-line"], 13);
+});
+
+test("resolves indexed host data paths and refuses inherited properties", () => {
+  assert.equal(resolveCUDLValue("#users[0].name", { users: [{ name: "Ada" }] }), "Ada");
+  assert.equal(resolveCUDLValue("#assets[logo]", { assets: { logo: "/logo.svg" } }), "/logo.svg");
+  assert.throws(() => resolveCUDLValue("#user.constructor", { user: {} }), /was not found/);
+  assert.throws(() => resolveCUDLValue("#user.__proto__", { user: {} }), /was not found/);
+});
+
+test("renders KIT definitions through application IR and rejects unsupported KIT versions", () => {
+  const application: CUDLApplicationIR = {
+    type: "CUDLApplicationIR",
+    version: 1,
+    sections: {
+      kit: {
+        type: "CUDLIR",
+        version: 1,
+        nodes: [{
+          kind: "component",
+          category: "component",
+          name: "component",
+          value: "WelcomeCard",
+          children: [
+            { kind: "property", category: "property", name: "property", value: "heading" },
+            { kind: "element", category: "element", name: "title", value: "heading", source: { line: 4 } },
+          ],
+        }],
+      },
+      pages: {
+        type: "CUDLIR",
+        version: 1,
+        nodes: [{
+          kind: "element",
+          category: "element",
+          name: "WelcomeCard",
+          value: "",
+          source: { line: 10 },
+          children: [{
+            kind: "property",
+            category: "property",
+            name: "heading",
+            value: "= #user.name",
+            source: { line: 11 },
+          }],
+        }],
+      },
+    },
+  };
+  const rendered = renderCUDLApplication(application, {}, { data: { user: { name: "Harry" } } });
+  assert.equal(findElements(rendered, "h1")[0]?.props.children, "Harry");
+
+  const invalid = {
+    ...application,
+    sections: {
+      ...application.sections,
+      kit: { type: "CUDLIR", version: 2, nodes: [] },
+    },
+  } as unknown as CUDLApplicationIR;
+  assert.throws(() => renderCUDLApplication(invalid), /Unsupported CUDL KIT IR/);
+});
+
+
+test("renders adapter output through the React DOM runtime", () => {
+  const rendered = renderCUDL({
+    type: "CUDLIR",
+    version: 1,
+    nodes: [{
+      kind: "element",
+      category: "element",
+      name: "page",
+      value: "Home",
+      source: { line: 1 },
+      children: [{
+        kind: "element",
+        category: "element",
+        name: "column",
+        value: "",
+        source: { line: 2 },
+        children: [
+          { kind: "element", category: "element", name: "title", value: "Welcome & learn", source: { line: 3 } },
+          { kind: "element", category: "element", name: "button", value: "Start", source: { line: 4 } },
+          { kind: "element", category: "element", name: "mystery", value: "fallback", source: { line: 5 } },
+        ],
+      }],
+    }],
+  });
+
+  assert.equal(
+    renderToStaticMarkup(rendered),
+    '<div data-cudl-root=""><main data-cudl="page" data-cudl-source-line="1"><div class="cudl-column" data-cudl="column" data-cudl-source-line="2"><h1 data-cudl="title" data-cudl-source-line="3">Welcome &amp; learn</h1><button type="button" data-cudl-source-line="4">Start</button><div data-cudl-component="mystery" data-cudl-source-line="5"></div></div></main></div>',
+  );
 });

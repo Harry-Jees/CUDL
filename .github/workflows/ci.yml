@@ -17,6 +17,18 @@ jobs:
         run: python -m pip install -e ".[dev]"
       - name: Run tests
         run: python -m pytest
+      - name: Build source and wheel distributions
+        run: |
+          python -m pip install build
+          python -m build --sdist --wheel --outdir "$RUNNER_TEMP/cudl-dist"
+      - name: Smoke-test installed wheel in a clean environment
+        run: |
+          python -m venv "$RUNNER_TEMP/cudl-package-smoke"
+          "$RUNNER_TEMP/cudl-package-smoke/bin/python" -m pip install --no-deps "$RUNNER_TEMP"/cudl-dist/*.whl
+          "$RUNNER_TEMP/cudl-package-smoke/bin/cudl" --help
+          "$RUNNER_TEMP/cudl-package-smoke/bin/cudl" check "$GITHUB_WORKSPACE/examples/hello.cudl"
+          "$RUNNER_TEMP/cudl-package-smoke/bin/cudl" check "$GITHUB_WORKSPACE/examples/hello-react-python.cudl"
+          "$RUNNER_TEMP/cudl-package-smoke/bin/cudl" bundle "$GITHUB_WORKSPACE/examples/five-part-welcome.cudl" > "$RUNNER_TEMP/cudl-package-smoke-ir.json"
       - name: Validate canonical examples
         run: |
           cudl check examples/hello.cudl
@@ -26,6 +38,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Build React adapter
+      - name: Install React adapter dependencies
         working-directory: adapters/react
-        run: npm install && npm test
+        run: npm install
+      - name: Build and test React adapter
+        working-directory: adapters/react
+        run: npm test
+      - name: Install Chromium for browser smoke tests
+        working-directory: adapters/react
+        run: npx playwright install --with-deps chromium
+      - name: Run React adapter in a real browser
+        working-directory: adapters/react
+        run: npm run test:browser
