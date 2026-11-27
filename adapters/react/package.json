@@ -14,7 +14,8 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "npm run build && node --test dist/index.test.js"
+    "test": "npm run build && node --test dist/index.test.js",
+    "test:browser": "node browser-smoke.mjs"
   },
   "peerDependencies": {
     "react": ">=18"
@@ -23,7 +24,10 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "playwright": "^1.55.0",
+    "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0"
   }
 }
