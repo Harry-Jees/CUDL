@@ -18,10 +18,10 @@ This checklist is evidence-oriented and deliberately distinguishes implemented b
 - [ ] Confirm source-span behavior across multiline strings, indentation and nested tags.
 - [ ] Verify resource limits for parser depth, node count, source bytes and IR payloads.
 - [ ] Run complete tests, lint, typecheck, package/build and example checks from a clean checkout.
-- [ ] Verify interactive adapter output in a real browser, including host event/state integration; the server-render smoke test is not a browser test.
+- [x] CI launches headless Chromium and verifies browser rendering, source-line metadata, unsafe URL blocking, unknown-component fallback, and stateful host-component interaction (`adapters/react/browser-smoke.mjs`).
 - [ ] Document the adapter's unsupported features, rather than promising events, native execution, responsive/theme systems or bundling without evidence.
 - [ ] Review dependencies, license metadata, package contents and version compatibility.
 - [ ] Tag a release candidate only after all gates pass; production release requires explicit approval.
 
 ## Known boundary
-The React adapter is a prototype/conformance surface, not a production UI runtime. CI now verifies static React DOM rendering through `react-dom/server`; this does not verify browser interactions, host event/state integration or production bundling.
+The React adapter remains a prototype/conformance surface, not a production UI runtime. CI now verifies static React DOM serialization and a real Chromium browser smoke path, including a registered host component with local React state. This does not establish a complete event system, responsive/theme runtime, or production application bundler.
